@@ -3,11 +3,13 @@
 '''
 
 import functools
+from typing import List, Tuple
 import numpy as np
 from rlcard.games.base import Card
 
-from rlcard.games.jass import Dealer
-from rlcard.games.jass.utils import SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, jass_sort_card
+from rlcard.games.jass import Dealer, Player
+from rlcard.games.jass.player import JassPlayer
+from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, jass_sort_card
 from rlcard.games.jass.utils import CARD_RANK_STR, CARD_RANK_STR_INDEX
 
 
@@ -24,7 +26,7 @@ class JassRound:
         self.deck_str = cards2str(self.dealer.deck)
         # cards lying on the table
         self.table_cards = []
-        self.played_cards
+        self.points = []
 
     def initiate(self, players):
         ''' Call dealer to deal cards and bid landlord.
@@ -107,7 +109,7 @@ class JassRound:
                             trump_played = True
                             if lowest_trump_played is not None:
                                 # 2 trumps were played, so we must compare
-                                if lowest_trump_played < table_cards[2]:
+                                if TRUMP_INDEX[lowest_trump_played.rank] < TRUMP_INDEX[table_cards[2].rank]:
                                     # move from player 2 is lower (as its index value is higher)
                                     lowest_trump_played = table_cards[2]
                             else:
@@ -153,8 +155,8 @@ class JassRound:
                         return color_hand + higher_trump_cards
                     else:
                         # play anything except a lower trump
-                        not_lower_trump_cards = 1 - lower_trump_cards
-                        return hand * not_lower_trump_cards
+                        return [c for c in hand if c != lower_trump_cards]
+        
         
 
     def proceed_round(self, player, action):
@@ -167,19 +169,42 @@ class JassRound:
         Returns:
             object of JassPlayer: player who played current biggest cards.
         '''
+
+        player.play(action)
         self.table_cards.append((player, action))
         self.played_cards[self.current_player][SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
         #self.played_cards.append(action)
 
         #self.update_public(action)
 
-
-        # set player to the one who wins the round
-        #self.current_player = 
-        self.greater_player = player.play(action)
+        if len(self.table_cards) == 4:
+            # round is over
+            self.current_player = self.count_points()
+            self.table_cards = []
 
         return self.current_player
 
+
+    def count_points(self) -> int:
+        """
+        Count the current points of both teams and returns the winner id
+        """
+        points = []
+        for player, card in self.table_cards:
+            if self.trump == card.suit:
+                point = CARD_VALUES[self.trump][card.rank]
+            else:
+                if self.trump == "U":
+                    point = CARD_VALUES["U"][card.rank]
+                else:
+                    point = CARD_VALUES["O"][card.rank]
+
+            print(self.table_cards)
+            points.append((player, point))
+        self.points.append(points)
+
+        return max(points, key=lambda k: k[1])[0].player_id
+        
     #def update_public(self, action):
     #    ''' Update public trace and played cards
 #

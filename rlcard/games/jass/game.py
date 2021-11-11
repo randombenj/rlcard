@@ -31,6 +31,10 @@ class JassGame:
         self.finished = False
         self.history = []
 
+        self.teams = [[1, 3], [2, 4]]
+        # two teams playing agains one another
+        self.payoffs = [0 for _ in range(len(self.teams))]
+
         # initialize players
         self.players = [Player(num, self.np_random)
                         for num in range(self.num_players)]
@@ -66,7 +70,7 @@ class JassGame:
 
         # perfrom action
         player = self.players[self.round.current_player]
-        self.round.proceed_round(player, action)
+        payoffs = self.round.proceed_round(player, action)
         #self.judger.calc_playable_cards(player, self.round.trump)
         if self.judger.judge_game(self.players, self.round.current_player):
             # ROUND OVER
@@ -117,7 +121,7 @@ class JassGame:
         Returns:
             int: the total number of abstract actions of doudizhu
         '''
-        return 27472
+        return 32
 
     def get_player_id(self):
         ''' Return current player's id
@@ -143,8 +147,21 @@ class JassGame:
         '''
         return self.finished
 
+    def get_payoffs(self):
+        for points_in_one_round in self.round.points:
+            for player_id, points in points_in_one_round:
+                team_id = 0 if player_id.player_id in self.teams[0] else 1
+                self.payoffs[team_id] += points
+
+        print(self.payoffs)
+        return self.payoffs
+
+
     def _get_others_current_hand(self, player):
-        player_up = self.players[(player.player_id+1) % len(self.players)]
-        player_down = self.players[(player.player_id-1) % len(self.players)]
-        others_hand = []# merge(player_up.current_hand, player_down.current_hand, key=functools.cmp_to_key(doudizhu_sort_card))
+        other_player_1 = self.players[(player.player_id+1) % len(self.players)]
+        teammate = self.players[(player.player_id+2) % len(self.players)]
+        other_player_2 = self.players[(player.player_id+3) % len(self.players)]
+        #others_hand = merge(other_player_1.current_hand, teammate.current_hand, other_player_2.current_hand)
+        others_hand = other_player_1.current_hand + teammate.current_hand + other_player_2.current_hand
+
         return cards2str(others_hand)

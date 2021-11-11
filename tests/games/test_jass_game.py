@@ -10,7 +10,7 @@ def test_get_num_player():
 def test_get_num_actions():
     game = Game()
     num_actions = game.get_num_actions()
-    assert num_actions == 27472
+    assert num_actions == 32
 
 def test_init_game():
     game = Game()
@@ -54,4 +54,4 @@ def test_get_payoffs():
     total = 0
     for payoff in payoffs:
         total += payoff
-    self.assertEqual(total, 0)
+    assert total == 157

@@ -71,27 +71,29 @@ CARD_RANK_STR_INDEX = {
 NUMBER_OF_CARDS = 36
 
 TRUMP_RANK = ['6', '7', '8', 'T', 'Q', 'K', 'A', '9', 'J']
+TRUMP_VALUE = {'6': 0, '7': 0, '8': 0, 'T': 10, 'Q': 3, 'K': 4, 'A': 11, '9': 14, 'J': 20}
 TRUMP_INDEX = {'6': 0, '7': 1, '8': 2, 'T': 3, 'Q': 4, 'K': 5, 'A': 6, '9': 7, 'J': 8}
 
+NORMAL_VALUE = {'6': 0, '7': 0, '8': 0, '9': 0, 'T': 10, 'J': 2, 'Q': 3, 'K': 4, 'A': 11}
+UNE_VALUE = {'A': 0, 'K': 4, 'Q': 3, 'J': 2, 'T': 10, '9': 0, '8': 8, '7': 0, '6': 11}
 
 CARD_INDEX = {
     "D": TRUMP_INDEX,
     "H": TRUMP_INDEX,
     "S": TRUMP_INDEX,
     "C": TRUMP_INDEX,
-    "O": {
-        '6': 0, 
-        '7': 1,
-        '8': 2,
-        '9': 3, 
-        'T': 4, 
-        'J': 5, 
-        'Q': 6,
-        'K': 7, 
-        'A': 8
-    },
+    "O": {'6': 0, '7': 1, '8': 2, '9': 3, 'T': 4, 'J': 5, 'Q': 6, 'K': 7, 'A': 8},
     "U": {'A': 0, 'K': 1, 'Q': 2, 'J': 3, 'T': 4, '9': 5, '8': 6, '7': 7, '6': 8}
 }
+CARD_VALUES = {
+    "D": TRUMP_VALUE,
+    "H": TRUMP_VALUE,
+    "S": TRUMP_VALUE,
+    "C": TRUMP_VALUE,
+    "O": NORMAL_VALUE,
+    "U": UNE_VALUE
+}
+
 # rank list
 CARD_RANK = {
     "D": TRUMP_RANK,

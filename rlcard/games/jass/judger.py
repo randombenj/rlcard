@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ''' Implement Doudizhu Judger class
 '''
-from typing import List
+from typing import List, Tuple
 import numpy as np
 import collections
 from itertools import combinations
@@ -47,7 +47,7 @@ class JassJudger:
         return False
 
     @staticmethod
-    def get_playable_cards(player: JassPlayer, trump: str, table_cards: List[Card]) -> List[Card]:
+    def get_playable_cards(player: JassPlayer, trump: str, table_cards: List[Tuple[JassPlayer, Card]]) -> List[Card]:
         hand = player.current_hand
         table_cards = [c[1] for c in table_cards]
         move_nr = len(table_cards)
@@ -114,7 +114,7 @@ class JassJudger:
                             trump_played = True
                             if lowest_trump_played is not None:
                                 # 2 trumps were played, so we must compare
-                                if lowest_trump_played < table_cards[2]:
+                                if TRUMP_INDEX[lowest_trump_played.rank] < TRUMP_INDEX[table_cards[2].rank]:
                                     # move from player 2 is lower (as its index value is higher)
                                     lowest_trump_played = table_cards[2]
                             else:
@@ -160,8 +160,7 @@ class JassJudger:
                         return color_hand + higher_trump_cards
                     else:
                         # play anything except a lower trump
-                        not_lower_trump_cards = 1 - lower_trump_cards
-                        return hand * not_lower_trump_cards
+                        return [c for c in hand if c != lower_trump_cards]
 
     @staticmethod
     def judge_payoffs(players):

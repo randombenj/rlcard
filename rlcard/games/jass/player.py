@@ -84,3 +84,6 @@ class JassPlayer:
             object of DoudizhuPlayer: If there is a new greater_player, return it, if not, return None
         '''
         self._current_hand.remove(action)
+
+    def __repr__(self):
+        return f"Player(id={self.player_id})"
