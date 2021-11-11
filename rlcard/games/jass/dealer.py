@@ -19,7 +19,7 @@ class JassDealer:
         self.np_random = np_random
         self.deck = init_32_deck()
         # should work also for jass
-        self.deck.sort(key=functools.cmp_to_key(jass_sort_card))
+        #self.deck.sort(key=functools.cmp_to_key(jass_sort_card))
         self.trump = None
 
     def shuffle(self):
@@ -36,7 +36,7 @@ class JassDealer:
         hand_num = (len(self.deck)) // len(players)
         for index, player in enumerate(players):
             current_hand = self.deck[index*hand_num:(index+1)*hand_num]
-            current_hand.sort(key=functools.cmp_to_key(jass_sort_card))
+            #current_hand.sort(key=functools.cmp_to_key(jass_sort_card))
             player.set_current_hand(current_hand)
             player.initial_hand = cards2str(player.current_hand)
 
@@ -53,9 +53,9 @@ class JassDealer:
         self.shuffle()
         self.deal_cards(players)
         
-        trump = players[trump_player].set_trump()
-        if did_push(trump):
+        self.trump = players[trump_player].set_trump()
+        if did_push(self.trump):
             # colleague chooses trump 'schiebe'
-            trump = player[trump_player + 2 % 4].set_trump()
+            self.trump = player[trump_player + 2 % 4].set_trump()
 
-        return trump
+        return self.trump

@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 ''' Implement Doudizhu Judger class
 '''
+from typing import List
 import numpy as np
 import collections
 from itertools import combinations
 from bisect import bisect_left
+from rlcard.games.jass.player import JassPlayer
 
+from rlcard.games.base import Card
 from rlcard.games.jass.utils import CARD_RANK_STR, CARD_RANK_STR_INDEX
+from rlcard.games.jass.utils import SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, jass_sort_card
 from rlcard.games.jass.utils import cards2str, contains_cards
 
 
@@ -14,322 +18,17 @@ from rlcard.games.jass.utils import cards2str, contains_cards
 class JassJudger:
     ''' Determine what cards a player can play
     '''
-    @staticmethod
-    def chain_indexes(indexes_list):
-        ''' Find chains for solos, pairs and trios by using indexes_list
 
-        Args:
-            indexes_list: the indexes of cards those have the same count, the count could be 1, 2, or 3.
-
-        Returns:
-            list of tuples: [(start_index1, length1), (start_index1, length1), ...]
-
-        '''
-        chains = []
-        prev_index = -100
-        count = 0
-        start = None
-        for i in indexes_list:
-            if (i[0] >= 12): #no chains for '2BR'
-                break
-            if (i[0] == prev_index + 1):
-                count += 1
-            else:
-                if (count > 1):
-                    chains.append((start, count))
-                count = 1
-                start = i[0]
-            prev_index = i[0]
-        if (count > 1):
-            chains.append((start, count))
-        return chains
-
-    @classmethod
-    def solo_attachments(cls, hands, chain_start, chain_length, size):
-        ''' Find solo attachments for trio_chain_solo_x and four_two_solo
-
-        Args:
-            hands:
-            chain_start: the index of start card of the trio_chain or trio or four
-            chain_length: the size of the sequence of the chain, 1 for trio_solo or four_two_solo
-            size: count of solos for the attachments
-
-        Returns:
-            list of tuples: [attachment1, attachment2, ...]
-                            Each attachment has two elemnts,
-                            the first one contains indexes of attached cards smaller than the index of chain_start,
-                            the first one contains indexes of attached cards larger than the index of chain_start
-        '''
-        attachments = set()
-        candidates = []
-        prev_card = None
-        same_card_count = 0
-        for card in hands:
-            #dont count those cards in the chain
-            if (CARD_RANK_STR_INDEX[card] >= chain_start and CARD_RANK_STR_INDEX[card] < chain_start + chain_length):
-                continue
-            if (card == prev_card):
-                #attachments can not have bomb
-                if (same_card_count == 3):
-                    continue
-                #attachments can not have 3 same cards consecutive with the trio (except 3 cards of '222')
-                elif (same_card_count == 2 and (CARD_RANK_STR_INDEX[card] == chain_start - 1 or CARD_RANK_STR_INDEX[card] == chain_start + chain_length) and card != '2'):
-                    continue
-                else:
-                    same_card_count += 1
-            else:
-                prev_card = card
-                same_card_count = 1
-            candidates.append(CARD_RANK_STR_INDEX[card])
-        for attachment in combinations(candidates, size):
-            if (attachment[-1] == 14 and attachment[-2] == 13):
-                continue
-            i = bisect_left(attachment, chain_start)
-            attachments.add((attachment[:i], attachment[i:]))
-        return list(attachments)
-
-    @classmethod
-    def pair_attachments(cls, cards_count, chain_start, chain_length, size):
-        ''' Find pair attachments for trio_chain_pair_x and four_two_pair
-
-        Args:
-            cards_count:
-            chain_start: the index of start card of the trio_chain or trio or four
-            chain_length: the size of the sequence of the chain, 1 for trio_pair or four_two_pair
-            size: count of pairs for the attachments
-
-        Returns:
-            list of tuples: [attachment1, attachment2, ...]
-                            Each attachment has two elemnts,
-                            the first one contains indexes of attached cards smaller than the index of chain_start,
-                            the first one contains indexes of attached cards larger than the index of chain_start
-        '''
-        attachments = set()
-        candidates = []
-        for i, _ in enumerate(cards_count):
-            if (i >= chain_start and i < chain_start + chain_length):
-                continue
-            if (cards_count[i] == 2 or cards_count[i] == 3):
-                candidates.append(i)
-            elif (cards_count[i] == 4):
-                candidates.append(i)
-        for attachment in combinations(candidates, size):
-            if (attachment[-1] == 14 and attachment[-2] == 13):
-                continue
-            i = bisect_left(attachment, chain_start)
-            attachments.add((attachment[:i], attachment[i:]))
-        return list(attachments)
-        
-    @staticmethod
-    def playable_cards_from_hand(current_hand):
-        ''' Get playable cards from hand
-
-        Returns:
-            set: set of string of playable cards
-        '''
-        cards_dict = collections.defaultdict(int)
-        for card in current_hand:
-            cards_dict[card] += 1
-        cards_count = np.array([cards_dict[k] for k in CARD_RANK_STR])
-        playable_cards = set()
-
-        non_zero_indexes = np.argwhere(cards_count > 0)
-        more_than_1_indexes = np.argwhere(cards_count > 1)
-        more_than_2_indexes = np.argwhere(cards_count > 2)
-        more_than_3_indexes = np.argwhere(cards_count > 3)
-        #solo
-        for i in non_zero_indexes:
-            playable_cards.add(CARD_RANK_STR[i[0]])
-        #pair
-        for i in more_than_1_indexes:
-            playable_cards.add(CARD_RANK_STR[i[0]] * 2)
-        #bomb, four_two_solo, four_two_pair
-        for i in more_than_3_indexes:
-            cards = CARD_RANK_STR[i[0]] * 4
-            playable_cards.add(cards)
-            for left, right in DoudizhuJudger.solo_attachments(current_hand, i[0], 1, 2):
-                pre_attached = ''
-                for j in left:
-                    pre_attached += CARD_RANK_STR[j]
-                post_attached = ''
-                for j in right:
-                    post_attached += CARD_RANK_STR[j]
-                playable_cards.add(pre_attached + cards + post_attached)
-            for left, right in DoudizhuJudger.pair_attachments(cards_count, i[0], 1, 2):
-                pre_attached = ''
-                for j in left:
-                    pre_attached += CARD_RANK_STR[j] * 2
-                post_attached = ''
-                for j in right:
-                    post_attached += CARD_RANK_STR[j] * 2
-                playable_cards.add(pre_attached + cards + post_attached)
-
-        #solo_chain_5 -- #solo_chain_12
-        solo_chain_indexes = DoudizhuJudger.chain_indexes(non_zero_indexes)
-        for (start_index, length) in solo_chain_indexes:
-            s, l = start_index, length
-            while(l >= 5):
-                cards = ''
-                curr_index = s - 1
-                curr_length = 0
-                while (curr_length < l and curr_length < 12):
-                    curr_index += 1
-                    curr_length += 1
-                    cards += CARD_RANK_STR[curr_index]
-                    if (curr_length >= 5):
-                        playable_cards.add(cards)
-                l -= 1
-                s += 1
-
-        #pair_chain_3 -- #pair_chain_10
-        pair_chain_indexes = DoudizhuJudger.chain_indexes(more_than_1_indexes)
-        for (start_index, length) in pair_chain_indexes:
-            s, l = start_index, length
-            while(l >= 3):
-                cards = ''
-                curr_index = s - 1
-                curr_length = 0
-                while (curr_length < l and curr_length < 10):
-                    curr_index += 1
-                    curr_length += 1
-                    cards += CARD_RANK_STR[curr_index] * 2
-                    if (curr_length >= 3):
-                        playable_cards.add(cards)
-                l -= 1
-                s += 1
-
-        #trio, trio_solo and trio_pair
-        for i in more_than_2_indexes:
-            playable_cards.add(CARD_RANK_STR[i[0]] * 3)
-            for j in non_zero_indexes:
-                if (j < i):
-                    playable_cards.add(CARD_RANK_STR[j[0]] + CARD_RANK_STR[i[0]] * 3)
-                elif (j > i):
-                    playable_cards.add(CARD_RANK_STR[i[0]] * 3 + CARD_RANK_STR[j[0]])
-            for j in more_than_1_indexes:
-                if (j < i):
-                    playable_cards.add(CARD_RANK_STR[j[0]] * 2 + CARD_RANK_STR[i[0]] * 3)
-                elif (j > i):
-                    playable_cards.add(CARD_RANK_STR[i[0]] * 3 + CARD_RANK_STR[j[0]] * 2)
-
-        #trio_solo, trio_pair, #trio -- trio_chain_2 -- trio_chain_6; trio_solo_chain_2 -- trio_solo_chain_5; trio_pair_chain_2 -- trio_pair_chain_4
-        trio_chain_indexes = DoudizhuJudger.chain_indexes(more_than_2_indexes)
-        for (start_index, length) in trio_chain_indexes:
-            s, l = start_index, length
-            while(l >= 2):
-                cards = ''
-                curr_index = s - 1
-                curr_length = 0
-                while (curr_length < l and curr_length < 6):
-                    curr_index += 1
-                    curr_length += 1
-                    cards += CARD_RANK_STR[curr_index] * 3
-
-                    #trio_chain_2 to trio_chain_6
-                    if (curr_length >= 2 and curr_length <= 6):
-                        playable_cards.add(cards)
-
-                    #trio_solo_chain_2 to trio_solo_chain_5
-                    if (curr_length >= 2 and curr_length <= 5):
-                        for left, right in DoudizhuJudger.solo_attachments(current_hand, s, curr_length, curr_length):
-                            pre_attached = ''
-                            for j in left:
-                                pre_attached += CARD_RANK_STR[j]
-                            post_attached = ''
-                            for j in right:
-                                post_attached += CARD_RANK_STR[j]
-                            playable_cards.add(pre_attached + cards + post_attached)
-
-                    #trio_pair_chain2 -- trio_pair_chain_4
-                    if (curr_length >= 2 and curr_length <= 4):
-                        for left, right in DoudizhuJudger.pair_attachments(cards_count, s, curr_length, curr_length):
-                            pre_attached = ''
-                            for j in left:
-                                pre_attached += CARD_RANK_STR[j] * 2
-                            post_attached = ''
-                            for j in right:
-                                post_attached += CARD_RANK_STR[j] * 2
-                            playable_cards.add(pre_attached + cards + post_attached)
-                l -= 1
-                s += 1
-        #rocket
-        if (cards_count[13] and cards_count[14]):
-            playable_cards.add(CARD_RANK_STR[13] + CARD_RANK_STR[14])
-        return playable_cards
-
+    
     def __init__(self, players, np_random):
         ''' Initilize the Judger class for Dou Dizhu
         '''
-        self.playable_cards = [set() for _ in range(3)]
+        self.playable_cards = [set() for _ in range(4)]
         self._recorded_removed_playable_cards = [[] for _ in range(3)]
         for player in players:
             player_id = player.player_id
             current_hand = cards2str(player.current_hand)
-            self.playable_cards[player_id] = self.playable_cards_from_hand(current_hand)
-
-    def calc_playable_cards(self, player):
-        ''' Recalculate all legal cards the player can play according to his
-        current hand.
-
-        Args:
-            player (DoudizhuPlayer object): object of DoudizhuPlayer
-            init_flag (boolean): For the first time, set it True to accelerate
-              the preocess.
-
-        Returns:
-            list: list of string of playable cards
-        '''
-        removed_playable_cards = []
-
-        player_id = player.player_id
-        current_hand = cards2str(player.current_hand)
-        missed = None
-        for single in player.singles:
-            if single not in current_hand:
-                missed = single
-                break
-
-        playable_cards = self.playable_cards[player_id].copy()
-
-        if missed is not None:
-            position = player.singles.find(missed)
-            player.singles = player.singles[position+1:]
-            for cards in playable_cards:
-                if missed in cards or (not contains_cards(current_hand, cards)):
-                    removed_playable_cards.append(cards)
-                    self.playable_cards[player_id].remove(cards)
-        else:
-            for cards in playable_cards:
-                if not contains_cards(current_hand, cards):
-                    #del self.playable_cards[player_id][cards]
-                    removed_playable_cards.append(cards)
-                    self.playable_cards[player_id].remove(cards)
-        self._recorded_removed_playable_cards[player_id].append(removed_playable_cards)
-        return self.playable_cards[player_id]
-
-    def restore_playable_cards(self, player_id):
-        ''' restore playable_cards for judger for game.step_back().
-
-        Args:
-            player_id: The id of the player whose playable_cards need to be restored
-        '''
-        removed_playable_cards = self._recorded_removed_playable_cards[player_id].pop()
-        self.playable_cards[player_id].update(removed_playable_cards)
-
-    def get_playable_cards(self, player):
-        ''' Provide all legal cards the player can play according to his
-        current hand.
-
-        Args:
-            player (DoudizhuPlayer object): object of DoudizhuPlayer
-            init_flag (boolean): For the first time, set it True to accelerate
-              the preocess.
-
-        Returns:
-            list: list of string of playable cards
-        '''
-        return self.playable_cards[player.player_id]
-
+            self.playable_cards[player_id] = [] #self.playable_cards_from_hand(current_hand)
 
     @staticmethod
     def judge_game(players, player_id):
@@ -348,7 +47,124 @@ class JassJudger:
         return False
 
     @staticmethod
-    def judge_payoffs(landlord_id, winner_id):
+    def get_playable_cards(player: JassPlayer, trump: str, table_cards: List[Card]) -> List[Card]:
+        hand = player.current_hand
+        table_cards = [c[1] for c in table_cards]
+        move_nr = len(table_cards)
+
+        # play anything on the first move
+        if move_nr == 0:
+            return hand
+
+        # get the color of the first played card and check if we have that color
+        color_played = table_cards[0].suit
+        color_hand = [c for c in hand if c.suit == color_played]
+        have_color_played = any(color_hand) 
+
+        if TRUMP_TYPE_INDEX[trump] >= 4:
+            # obe or une declared
+            if have_color_played:
+                # must give the correct color
+                return color_hand
+            else:
+                # play anything, if we don't have the color
+                return hand
+        else:
+            #
+            # round with trumps declared (not 'obe' or 'une')
+            #
+
+            # check number of trumps we have and number of cards left, in order to simplify some of the conditions
+            number_of_trumps = len(color_hand)
+            number_of_cards = len(hand)
+
+            #
+            # the played color was trump
+            #
+            if color_played == trump:
+                if number_of_trumps == 0:
+                    # no more trumps, play anything
+                    return hand
+                elif number_of_trumps == 1:
+                    if Card(trump, 'J') in hand:
+                        # we have only trump jack, so we can play anything
+                        return hand
+                    else:
+                        # we have just one trump and must play it
+                        return [h for h in hand if h.suit == trump]
+                else:
+                    # we have more than one trump, so we must play one of them
+                    return [h for h in hand if h.suit == trump]
+            #
+            # the played color was not trump
+            #
+            else:
+                # check if anybody else (player 1 or player 2) played a trump, and if yes how high
+                lowest_trump_played = None
+                trump_played = False
+
+                if move_nr > 1:
+                    # check player 1
+                    if table_cards[1].suit == trump:
+                        trump_played = True
+                        lowest_trump_played = table_cards[1]
+                    # check player 2
+                    if move_nr == 3:
+                        if table_cards[2].suit == trump:
+                            trump_played = True
+                            if lowest_trump_played is not None:
+                                # 2 trumps were played, so we must compare
+                                if lowest_trump_played < table_cards[2]:
+                                    # move from player 2 is lower (as its index value is higher)
+                                    lowest_trump_played = table_cards[2]
+                            else:
+                                # this is the only trump played, so it is the lowest
+                                lowest_trump_played = table_cards[2]
+
+                #
+                # nobody played a trump, so we do not need to consider any restrictions on playing trump ourselves
+                #
+                if not trump_played:
+                    if have_color_played:
+                        # must give a color or can give any trump
+                        trump_cards = [h for h in hand if h.suit == trump]
+                        return color_hand + trump_cards
+                    else:
+                        # we do not have the color, so we can play anything, including any trump
+                        return hand
+
+                #
+                # somebody played a trump, so we have the restriction that we can not play a lower trump, with
+                # the exception if we only have trump left
+                #
+                else:
+                    if number_of_trumps == number_of_cards:
+                        # we have only trump left, so we can give any of them
+                        return hand
+                    else:
+                        #
+                        # find the valid trumps to play
+                        #
+
+                        # all trumps in hand
+                        trump_cards = [h for h in hand if h.suit == trump]
+
+                        # higher trump cards in hand
+                        higher_trump_cards = get_higher_trump(trump_cards, lowest_trump_played)
+
+                        # lower trump cards in hand
+                        lower_trump_cards = get_lower_trump(trump_cards, lowest_trump_played)
+
+                    if have_color_played:
+                        # must give a color or a higher trump
+                        return color_hand + higher_trump_cards
+                    else:
+                        # play anything except a lower trump
+                        not_lower_trump_cards = 1 - lower_trump_cards
+                        return hand * not_lower_trump_cards
+
+    @staticmethod
+    def judge_payoffs(players):
         payoffs = np.array([0, 0, 0])
         if winner_id == landlord_id:
             payoffs[landlord_id] = 1

@@ -7,7 +7,7 @@ import numpy as np
 from rlcard.games.base import Card
 
 from rlcard.games.jass import Dealer
-from rlcard.games.jass.utils import cards2str, jass_sort_card
+from rlcard.games.jass.utils import SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, jass_sort_card
 from rlcard.games.jass.utils import CARD_RANK_STR, CARD_RANK_STR_INDEX
 
 
@@ -18,13 +18,13 @@ class JassRound:
         self.np_random = np_random
         self.played_cards = played_cards
         self.current_player = 0
-        self.trace = []
 
         self.greater_player = None
         self.dealer = Dealer(self.np_random)
         self.deck_str = cards2str(self.dealer.deck)
         # cards lying on the table
         self.table_cards = []
+        self.played_cards
 
     def initiate(self, players):
         ''' Call dealer to deal cards and bid landlord.
@@ -35,13 +35,13 @@ class JassRound:
         self.trump = self.dealer.determine_trump(players, self.current_player)
         self.public = {
             'trump': self.trump, 
-            'trace': self.trace, 
-            'played_cards': ['' for _ in range(len(players))]
+            'table_cards': self.table_cards, 
+            'played_cards': self.played_cards
         }
 
     def get_legal_actions(self, players, player_id):
-        hand = players[player_id].hand
-        table_cards = self.table_cards
+        hand = players[player_id].current_hand
+        table_cards = [c[1] for c in self.table_cards]
         trump = self.trump
         move_nr = len(table_cards)
 
@@ -54,7 +54,7 @@ class JassRound:
         color_hand = [c for c in hand if c.suit == color_played]
         have_color_played = any(color_hand) 
 
-        if self.trump >= 4:
+        if TRUMP_TYPE_INDEX[self.trump] >= 4:
             # obe or une declared
             if have_color_played:
                 # must give the correct color
@@ -120,9 +120,8 @@ class JassRound:
                 if not trump_played:
                     if have_color_played:
                         # must give a color or can give any trump
-                        color_cards = color_hand
                         trump_cards = [h for h in hand if h.suit == trump]
-                        return color_cards + trump_cards
+                        return color_hand + trump_cards
                     else:
                         # we do not have the color, so we can play anything, including any trump
                         return hand
@@ -144,31 +143,52 @@ class JassRound:
                         trump_cards = [h for h in hand if h.suit == trump]
 
                         # higher trump cards in hand
-                        higher_trump_cards = trump_cards * higher_trump[lowest_trump_played, :]
+                        higher_trump_cards = get_higher_trump(trump_cards, lowest_trump_played)
 
                         # lower trump cards in hand
-                        lower_trump_cards = trump_cards * lower_trump[lowest_trump_played, :]
+                        lower_trump_cards = get_lower_trump(trump_cards, lowest_trump_played)
 
                     if have_color_played:
                         # must give a color or a higher trump
-                        color_cards = color_cards
-                        return color_cards + higher_trump_cards
+                        return color_hand + higher_trump_cards
                     else:
                         # play anything except a lower trump
                         not_lower_trump_cards = 1 - lower_trump_cards
                         return hand * not_lower_trump_cards
         
 
-
-    def update_public(self, action):
-        ''' Update public trace and played cards
+    def proceed_round(self, player, action):
+        ''' Call other Classes's functions to keep one round running
 
         Args:
-            action(str): string of legal specific action
+            player (object): object of JassPlayer
+            action (str): string of legal specific action
+
+        Returns:
+            object of JassPlayer: player who played current biggest cards.
         '''
-        self.trace.append((self.current_player, action))
-        for c in action:
-            self.played_cards[self.current_player][CARD_RANK_STR_INDEX[c]] = 1
+        self.table_cards.append((player, action))
+        self.played_cards[self.current_player][SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
+        #self.played_cards.append(action)
+
+        #self.update_public(action)
+
+
+        # set player to the one who wins the round
+        #self.current_player = 
+        self.greater_player = player.play(action)
+
+        return self.current_player
+
+    #def update_public(self, action):
+    #    ''' Update public trace and played cards
+#
+    #    Args:
+    #        action(str): string of legal specific action
+    #    '''
+    #    self.table_cards.append((self.current_player, action))
+    #    #self.trace.append((self.current_player, action))
+    #    self.played_cards[self.current_player][CARD_RANK_STR_INDEX[action]] = 1
 """
     @staticmethod
     def cards_ndarray_to_str(ndarray_cards):
@@ -182,19 +202,6 @@ class JassRound:
         return result
 
 
-    def proceed_round(self, player, action):
-        ''' Call other Classes's functions to keep one round running
-
-        Args:
-            player (object): object of JassPlayer
-            action (str): string of legal specific action
-
-        Returns:
-            object of JassPlayer: player who played current biggest cards.
-        '''
-        self.update_public(action)
-        self.greater_player = player.play(action, self.greater_player)
-        return self.greater_player
 
     def step_back(self, players):
         ''' Reverse the last action

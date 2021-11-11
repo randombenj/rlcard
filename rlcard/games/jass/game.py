@@ -5,7 +5,7 @@ import functools
 from heapq import merge
 import numpy as np
 
-from rlcard.games.jass.utils import cards2str, doudizhu_sort_card, CARD_RANK_STR
+from rlcard.games.jass.utils import cards2str, NUMBER_OF_CARDS, jass_sort_card, CARD_RANK_STR
 from rlcard.games.jass import Player
 from rlcard.games.jass import Round
 from rlcard.games.jass import Judger
@@ -28,7 +28,7 @@ class JassGame:
             int: current player's id
         '''
         # initialize public variables
-        self.winner_id = None
+        self.finished = False
         self.history = []
 
         # initialize players
@@ -36,7 +36,7 @@ class JassGame:
                         for num in range(self.num_players)]
 
         # initialize round to deal cards and determine trump
-        self.played_cards = [np.zeros((len(CARD_RANK_STR), ), dtype=np.int)
+        self.played_cards = [np.zeros((NUMBER_OF_CARDS, ), dtype=np.int)
                                 for _ in range(self.num_players)]
         self.round = Round(self.np_random, self.played_cards)
         self.round.initiate(self.players)
@@ -67,10 +67,10 @@ class JassGame:
         # perfrom action
         player = self.players[self.round.current_player]
         self.round.proceed_round(player, action)
-        if (action != 'pass'):
-            self.judger.calc_playable_cards(player)
+        #self.judger.calc_playable_cards(player, self.round.trump)
         if self.judger.judge_game(self.players, self.round.current_player):
-            self.winner_id = self.round.current_player
+            # ROUND OVER
+            self.finished = True
 
         next_id = (player.player_id+1) % len(self.players)
         self.round.current_player = next_id
@@ -81,32 +81,6 @@ class JassGame:
 
         return state, next_id
 
-    def step_back(self):
-        ''' Return to the previous state of the game
-
-        Returns:
-            (bool): True if the game steps back successfully
-        '''
-        if not self.round.trace:
-            return False
-
-        #winner_id will be always None no matter step_back from any case
-        self.winner_id = None
-
-        #reverse round
-        player_id, cards = self.round.step_back(self.players)
-
-        #reverse player
-        if (cards != 'pass'):
-            self.players[player_id].played_cards = self.round.find_last_played_cards_in_trace(player_id)
-        self.players[player_id].play_back()
-
-        #reverse judger.played_cards if needed
-        if (cards != 'pass'):
-            self.judger.restore_playable_cards(player_id)
-
-        self.state = self.get_state(self.round.current_player)
-        return True
 
     def get_legal_actions(self):
         ''' Return the legal actions for current player
@@ -114,7 +88,6 @@ class JassGame:
         Returns:
             (list): A list of legal actions
         '''
-
         return self.round.get_legal_actions(self.players, self.round.current_player)
 
     def get_state(self, player_id):
@@ -132,7 +105,7 @@ class JassGame:
         if self.is_over():
             actions = []
         else:
-            actions = list(player.available_actions(self.round.greater_player, self.judger))
+            actions = list(player.available_actions(self.judger, self.round.trump, self.round.table_cards))
         state = player.get_state(self.round.public, others_hands, num_cards_left, actions)
 
         return state
@@ -168,12 +141,10 @@ class JassGame:
         Returns:
             Bool: True(over) / False(not over)
         '''
-        if self.winner_id is None:
-            return False
-        return True
+        return self.finished
 
     def _get_others_current_hand(self, player):
         player_up = self.players[(player.player_id+1) % len(self.players)]
         player_down = self.players[(player.player_id-1) % len(self.players)]
-        others_hand = merge(player_up.current_hand, player_down.current_hand, key=functools.cmp_to_key(doudizhu_sort_card))
+        others_hand = []# merge(player_up.current_hand, player_down.current_hand, key=functools.cmp_to_key(doudizhu_sort_card))
         return cards2str(others_hand)

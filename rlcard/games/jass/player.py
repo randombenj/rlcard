@@ -38,13 +38,17 @@ class JassPlayer:
     def current_hand(self):
         return self._current_hand
 
+    def set_trump(self):
+        # TODO:
+        return "D"
+
     def set_current_hand(self, value):
         self._current_hand = value
 
     def get_state(self, public, others_hands, num_cards_left, actions):
         state = {}
         state['trump'] = public['trump']
-        state['trace'] = public['trace'].copy()
+        state['table_cards'] = public['table_cards'].copy()
         state['played_cards'] = public['played_cards']
         state['self'] = self.player_id
         state['current_hand'] = cards2str(self._current_hand)
@@ -54,7 +58,7 @@ class JassPlayer:
 
         return state
 
-    def available_actions(self, greater_player=None, judger=None):
+    def available_actions(self, judger, trump, table_cards):
         ''' Get the actions can be made based on the rules
 
         Args:
@@ -65,14 +69,11 @@ class JassPlayer:
         Returns:
             list: list of string of actions. Eg: ['8', '9', 'T', 'J']
         '''
-        actions = []
-        if greater_player is None or greater_player.player_id == self.player_id:
-            actions = judger.get_playable_cards(self)
-        else:
-            actions = get_gt_cards(self, greater_player)
+
+        actions = judger.get_playable_cards(self, trump, table_cards)
         return actions
 
-    def play(self, action, greater_player=None):
+    def play(self, action):
         ''' Perfrom action
 
         Args:
@@ -82,31 +83,4 @@ class JassPlayer:
         Returns:
             object of DoudizhuPlayer: If there is a new greater_player, return it, if not, return None
         '''
-        trans = {'B': 'BJ', 'R': 'RJ'}
-        if action == 'pass':
-            self._recorded_played_cards.append([])
-            return greater_player
-        else:
-            removed_cards = []
-            self.played_cards = action
-            for play_card in action:
-                if play_card in trans:
-                    play_card = trans[play_card]
-                for _, remain_card in enumerate(self._current_hand):
-                    if remain_card.rank != '':
-                        remain_card = remain_card.rank
-                    else:
-                        remain_card = remain_card.suit
-                    if play_card == remain_card:
-                        removed_cards.append(self.current_hand[_])
-                        self._current_hand.remove(self._current_hand[_])
-                        break
-            self._recorded_played_cards.append(removed_cards)
-            return self
-
-    def play_back(self):
-        ''' Restore recorded cards back to self._current_hand
-        '''
-        removed_cards = self._recorded_played_cards.pop()
-        self._current_hand.extend(removed_cards)
-        self._current_hand.sort(key=functools.cmp_to_key(doudizhu_sort_card))
+        self._current_hand.remove(action)

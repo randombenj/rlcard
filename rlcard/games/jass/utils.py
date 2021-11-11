@@ -5,10 +5,12 @@ import json
 from collections import OrderedDict
 import threading
 import collections
+from typing import List
 
 import rlcard
 from rlcard.games.base import Card
 
+"""
 # Read required docs
 ROOT_PATH = rlcard.__path__[0]
 
@@ -38,10 +40,19 @@ type_card_path = os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/type_card.json
 with open(type_card_path, 'r') as f:
     TYPE_CARD = json.load(f, object_pairs_hook=OrderedDict)
 
+"""
+
 def did_push(trump):
     return trump == "P"
 
+SUIT_OFFSET = {
+    "D": 0,
+    "H": 8,
+    "S": 17,
+    "C": 27
+}
 TRUMP = ['D', "H", "S", "C", "O", "U", "P"]
+TRUMP_TYPE_INDEX = {'D': 0, "H": 1, "S": 2, "C": 3, "O": 4, "U": 5, "P": 6}
 
 # rank list of solo character of cards
 CARD_RANK_STR = ['6', '7', '8', '9', 'T', 'J', 'Q', 'K','A']
@@ -56,26 +67,52 @@ CARD_RANK_STR_INDEX = {
     'K': 7, 
     'A': 8
 }
+
+NUMBER_OF_CARDS = 36
+
+TRUMP_RANK = ['6', '7', '8', 'T', 'Q', 'K', 'A', '9', 'J']
+TRUMP_INDEX = {'6': 0, '7': 1, '8': 2, 'T': 3, 'Q': 4, 'K': 5, 'A': 6, '9': 7, 'J': 8}
+
+
+CARD_INDEX = {
+    "D": TRUMP_INDEX,
+    "H": TRUMP_INDEX,
+    "S": TRUMP_INDEX,
+    "C": TRUMP_INDEX,
+    "O": {
+        '6': 0, 
+        '7': 1,
+        '8': 2,
+        '9': 3, 
+        'T': 4, 
+        'J': 5, 
+        'Q': 6,
+        'K': 7, 
+        'A': 8
+    },
+    "U": {'A': 0, 'K': 1, 'Q': 2, 'J': 3, 'T': 4, '9': 5, '8': 6, '7': 7, '6': 8}
+}
 # rank list
-CARD_RANK = ['6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
-INDEX = {
-    '6': 0, 
-    '7': 1,
-    '8': 2,
-    '9': 3, 
-    'T': 4, 
-    'J': 5, 
-    'Q': 6,
-    'K': 7, 
-    'A': 8
+CARD_RANK = {
+    "D": TRUMP_RANK,
+    "H": TRUMP_RANK,
+    "S": TRUMP_RANK,
+    "C": TRUMP_RANK,
+    "O": ['6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'],
+    "U": ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6']
 }
 
 
 
-INDEX = OrderedDict(sorted(INDEX.items(), key=lambda t: t[1]))
+#INDEX = OrderedDict(sorted(INDEX.items(), key=lambda t: t[1]))
 
-def get_higher_trump(trump_cards: list[Card], trump: Card) -> list[Card]:
+def get_higher_trump(trump_cards: List[Card], trump: Card) -> List[Card]:
+    rank_index = CARD_RANK[trump.suit].index(trump.rank)
+    return [t for t in trump_cards if CARD_RANK[trump.suit].index(t.rank) > rank_index]
 
+def get_lower_trump(trump_cards: List[Card], trump: Card) -> List[Card]:
+    rank_index = CARD_RANK[trump.suit].index(trump.rank)
+    return [t for t in trump_cards if CARD_RANK[trump.suit].index(t.rank) < rank_index]
 
 def jass_sort_str(card_1, card_2):
     ''' Compare the rank of two cards of str representation
@@ -115,36 +152,6 @@ def jass_sort_card(card_1, card_2):
         return -1
     return 0
 
-
-def get_landlord_score(current_hand):
-    ''' Roughly judge the quality of the hand, and provide a score as basis to
-    bid landlord.
-
-    Args:
-        current_hand (str): string of cards. Eg: '56888TTQKKKAA222R'
-
-    Returns:
-        int: score
-    '''
-    score_map = {'A': 1, '2': 2, 'B': 3, 'R': 4}
-    score = 0
-    # rocket
-    if current_hand[-2:] == 'BR':
-        score += 8
-        current_hand = current_hand[:-2]
-    length = len(current_hand)
-    i = 0
-    while i < length:
-        # bomb
-        if i <= (length - 4) and current_hand[i] == current_hand[i+3]:
-            score += 6
-            i += 4
-            continue
-        # 2, Black Joker, Red Joker
-        if current_hand[i] in score_map:
-            score += score_map[current_hand[i]]
-        i += 1
-    return score
 
 def cards2str_with_suit(cards):
     ''' Get the corresponding string representation of cards with suit
