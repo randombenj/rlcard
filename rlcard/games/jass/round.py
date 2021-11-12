@@ -9,7 +9,7 @@ from rlcard.games.base import Card
 
 from rlcard.games.jass import Dealer, Player
 from rlcard.games.jass.player import JassPlayer
-from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, jass_sort_card
+from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, get_jass_sort_card
 from rlcard.games.jass.utils import CARD_INDEX, CARD_RANK_STR_INDEX
 
 

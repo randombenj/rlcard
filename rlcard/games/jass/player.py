@@ -4,7 +4,7 @@
 import functools
 
 from rlcard.games.jass.utils import get_gt_cards
-from rlcard.games.jass.utils import cards2str, jass_sort_card
+from rlcard.games.jass.utils import cards2str, get_jass_sort_card
 
 
 class JassPlayer:

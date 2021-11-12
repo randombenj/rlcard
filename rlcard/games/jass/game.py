@@ -5,7 +5,7 @@ import functools
 from heapq import merge
 import numpy as np
 
-from rlcard.games.jass.utils import cards2str, NUMBER_OF_CARDS, jass_sort_card, CARD_RANK_STR
+from rlcard.games.jass.utils import cards2str, NUMBER_OF_CARDS, get_jass_sort_card, CARD_RANK_STR
 from rlcard.games.jass import Player
 from rlcard.games.jass import Round
 from rlcard.games.jass import Judger
@@ -167,7 +167,10 @@ class JassGame:
         other_player_1 = self.players[(player.player_id+1) % len(self.players)]
         teammate = self.players[(player.player_id+2) % len(self.players)]
         other_player_2 = self.players[(player.player_id+3) % len(self.players)]
-        #others_hand = merge(other_player_1.current_hand, teammate.current_hand, other_player_2.current_hand)
+        others_hand = merge(
+            other_player_1.current_hand, teammate.current_hand, other_player_2.current_hand, 
+            key=functools.cmp_to_key(get_jass_sort_card(self.round.trump))
+        )
         others_hand = other_player_1.current_hand + teammate.current_hand + other_player_2.current_hand
 
         return cards2str(others_hand)

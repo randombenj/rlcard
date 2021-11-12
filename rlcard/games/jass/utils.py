@@ -135,24 +135,58 @@ def jass_sort_str(card_1, card_2):
     return 0
 
 
-def jass_sort_card(card_1, card_2):
-    ''' Compare the rank of two cards of Card object
+def get_jass_sort_card(trump):
+    def __jass_sort_card(card_1, card_2):
+        ''' Compare the rank of two cards of Card object
 
-    Args:
-        card_1 (object): object of Card
-        card_2 (object): object of card
-    '''
-    key = []
-    for card in [card_1, card_2]:
-        if card.rank == '':
-            key.append(CARD_RANK.index(card.suit))
-        else:
-            key.append(CARD_RANK.index(card.rank))
-    if key[0] > key[1]:
-        return 1
-    if key[0] < key[1]:
-        return -1
-    return 0
+        Args:
+            card_1 (object): object of Card
+            card_2 (object): object of card
+        '''
+
+        # if one is trump and the other not, trump is more valuable
+        if card_1.suit == trump and card_2.suit != trump:
+            return 1
+        if card_1.suit != trump and card_2.suit == trump:
+            return -1
+
+        # unne
+        if trump == "U":
+            key = []
+            for card in [card_1, card_2]:
+                key.append(CARD_RANK["U"].index(card.rank))
+
+            if key[0] > key[1]:
+                return 1
+            if key[0] < key[1]:
+                return -1
+            return 0
+
+
+        # both are trumps, so compare trumps
+        if card_1.suit == trump and card_2.suit == trump:
+            key = []
+            for card in [card_1, card_2]:
+                key.append(CARD_RANK[trump].index(card.rank))
+
+            if key[0] > key[1]:
+                return 1
+            if key[0] < key[1]:
+                return -1
+            return 0
+
+        # default case, obe abe
+        key = []
+        for card in [card_1, card_2]:
+            key.append(CARD_RANK["O"].index(card.rank))
+
+        if key[0] > key[1]:
+            return 1
+        if key[0] < key[1]:
+            return -1
+        return 0
+
+    return __jass_sort_card
 
 
 def cards2str_with_suit(cards):

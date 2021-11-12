@@ -5,7 +5,7 @@ import functools
 from rlcard.games.jass import player
 
 from rlcard.utils import init_32_deck
-from rlcard.games.jass.utils import cards2str, did_push, jass_sort_card
+from rlcard.games.jass.utils import cards2str, did_push, get_jass_sort_card, get_jass_sort_card
 
 class JassDealer:
     ''' Dealer will shuffle, deal cards, and determine players' roles
@@ -57,5 +57,8 @@ class JassDealer:
         if did_push(self.trump):
             # colleague chooses trump 'schiebe'
             self.trump = player[trump_player + 2 % 4].set_trump()
+
+        for player in players:
+            player.current_hand.sort(key=functools.cmp_to_key(get_jass_sort_card(self.trump)))
 
         return self.trump
