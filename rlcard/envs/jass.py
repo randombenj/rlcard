@@ -26,8 +26,8 @@ class JassEnv(Env):
         super().__init__(config)
 
         # FIXME
-        self.state_shape = [[9] for _ in range(self.num_players)]
-        self.action_shape = [[9] for _ in range(self.num_players)]
+        self.state_shape = [[36 + 36 + 36 + 6] for _ in range(self.num_players)]
+        self.action_shape = [[36] for _ in range(self.num_players)]
 
     def _get_legal_actions(self):
         ''' Get all leagal actions
@@ -51,11 +51,13 @@ class JassEnv(Env):
         '''
         current_hand = one_hot_encode_cards(state['current_hand'])
         others_hand = one_hot_encode_cards(state['others_hand'])
+        played_cards = one_hot_encode_cards(state['played_cards'])
         trump = one_hot_encode_trump(state['trump'])
 
         obs = np.concatenate((
             current_hand,
             others_hand,
+            played_cards,
             trump
         ))
 

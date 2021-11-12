@@ -170,7 +170,7 @@ class JassRound:
 
         player.play(action)
         self.table_cards.append((player, action))
-        self.played_cards[self.current_player] += f"{action.suit}{action.rank}" #  [SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
+        self.played_cards += f"{action.suit}{action.rank}" #  [SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
         #self.played_cards.append(action)
 
         #self.update_public(action)

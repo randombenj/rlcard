@@ -40,7 +40,7 @@ class JassGame:
                         for num in range(self.num_players)]
 
         # initialize round to deal cards and determine trump
-        self.played_cards = ['' for _ in range(self.num_players)]
+        self.played_cards = ""
         self.round = Round(self.np_random, self.played_cards)
         self.round.initiate(self.players)
 
@@ -160,8 +160,10 @@ class JassGame:
         payoff = 1 if point_difference > 0 else -1
 
         return [
-            payoff,      # team 0
-            payoff * -1  # team 1
+            payoff,       # team 0 p1
+            payoff * -1,  # team 1 p1
+            payoff,       # team 0 p2
+            payoff * -1,  # team 1 p2
         ]
 
 
