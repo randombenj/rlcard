@@ -1,6 +1,7 @@
 ''' Doudizhu utils
 '''
 import os
+import numpy as np
 import json
 from collections import OrderedDict
 import threading
@@ -104,7 +105,18 @@ CARD_RANK = {
     "U": ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6']
 }
 
+def one_hot_encode_trump(trump: str):
+    one_hot = np.zeros(6)
+    one_hot[TRUMP.index(trump)] = 1
+    return one_hot
 
+
+def one_hot_encode_cards(cards: str):
+    one_hot = np.zeros(36)
+    for card in cards.split():
+        suit, rank = card[0], card[1]
+        one_hot[SUIT_OFFSET[suit] + CARD_RANK_STR_INDEX[rank]] = 1
+    return one_hot
 
 #INDEX = OrderedDict(sorted(INDEX.items(), key=lambda t: t[1]))
 
@@ -303,7 +315,7 @@ def get_gt_cards(player, greater_player, trump):
     '''
     # add 'pass' to legal actions
     gt_cards = []
-    current_hand = cards2str(player.current_hand)
+    current_hand = cards2str_with_suit(player.current_hand)
     target_cards = greater_player.played_cards
     target_types = CARD_TYPE[0][target_cards]
     type_dict = {}

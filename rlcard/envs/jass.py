@@ -2,7 +2,7 @@ import numpy as np
 from collections import OrderedDict
 
 from rlcard.envs import Env
-from rlcard.games.jass.utils import CARD_VALUES
+from rlcard.games.jass.utils import CARD_RANK_STR_INDEX, CARD_VALUES, SUIT_OFFSET, one_hot_encode_cards, one_hot_encode_trump
 from rlcard.games.jass import Game
 
 DEFAULT_GAME_CONFIG = {
@@ -32,10 +32,10 @@ class JassEnv(Env):
         Returns:
             encoded_action_list (list): return encoded legal action list (from str to int)
         '''
-        encoded_action_list = []
-        for i in range(len(self.actions)):
-            encoded_action_list.append(i)
-        return encoded_action_list
+
+        legal_actions = self.game.state['actions']
+        legal_actions = OrderedDict({SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]: None for action in legal_actions})
+        return legal_actions
 
     def _extract_state(self, state):
         ''' Extract the state representation from state dictionary for agent
@@ -46,32 +46,22 @@ class JassEnv(Env):
         Returns:
             observation (list): combine the player's score and dealer's observable score for observation
         '''
-        print(state)
-        cards = state['state']
-        my_cards = cards[0]
-        dealer_cards = cards[1]
+        current_hand = one_hot_encode_cards(state['current_hand'])
+        others_hand = one_hot_encode_cards(state['others_hand'])
+        trump = one_hot_encode_trump(state['trump'])
 
-        def get_scores_and_A(hand):
-            score = 0
-            has_a = 0
-            for card in hand:
-                score += self.rank2score[card[1:]]
-                if card[1] == 'A':
-                    has_a = 1
-            if score > 21 and has_a == 1:
-                score -= 10
-            return score, has_a
+        obs = np.concatenate((
+            current_hand,
+            others_hand,
+            trump
+        ))
 
-        my_score, _ = get_scores_and_A(my_cards)
-        dealer_score, _ = get_scores_and_A(dealer_cards)
-        obs = np.array([my_score, dealer_score])
-
-        legal_actions = OrderedDict({i: None for i in range(len(self.actions))})
-        extracted_state = {'obs': obs, 'legal_actions': legal_actions}
+        extracted_state = OrderedDict({'obs': obs, 'legal_actions': self._get_legal_actions()})
         extracted_state['raw_obs'] = state
-        extracted_state['raw_legal_actions'] = [a for a in self.actions]
+        extracted_state['raw_legal_actions'] = [a for a in state['actions']]
         extracted_state['action_record'] = self.action_recorder
         return extracted_state
+
 
     def get_payoffs(self):
         ''' Get the payoff of a game

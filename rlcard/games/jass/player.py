@@ -3,7 +3,7 @@
 '''
 import functools
 
-from rlcard.games.jass.utils import get_gt_cards
+from rlcard.games.jass.utils import cards2str_with_suit, get_gt_cards
 from rlcard.games.jass.utils import cards2str, get_jass_sort_card
 
 
@@ -28,7 +28,6 @@ class JassPlayer:
         self.initial_hand = None
         self._current_hand = []
         self.played_cards = None
-        self.singles = '6789TJQKA'
 
         #record cards removed from self._current_hand for each play()
         # and restore cards back to self._current_hand when play_back()
@@ -51,7 +50,7 @@ class JassPlayer:
         state['table_cards'] = public['table_cards'].copy()
         state['played_cards'] = public['played_cards']
         state['self'] = self.player_id
-        state['current_hand'] = cards2str(self._current_hand)
+        state['current_hand'] = cards2str_with_suit(self._current_hand)
         state['others_hand'] = others_hands
         state['num_cards_left'] = num_cards_left
         state['actions'] = actions
