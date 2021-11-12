@@ -40,7 +40,7 @@ class JassGame:
                         for num in range(self.num_players)]
 
         # initialize round to deal cards and determine trump
-        self.played_cards = [np.zeros((NUMBER_OF_CARDS, ), dtype=np.int)
+        self.played_cards = [np.zeros((NUMBER_OF_CARDS, ), dtype=int)
                                 for _ in range(self.num_players)]
         self.round = Round(self.np_random, self.played_cards)
         self.round.initiate(self.players)
@@ -171,6 +171,4 @@ class JassGame:
             other_player_1.current_hand, teammate.current_hand, other_player_2.current_hand, 
             key=functools.cmp_to_key(get_jass_sort_card(self.round.trump))
         )
-        others_hand = other_player_1.current_hand + teammate.current_hand + other_player_2.current_hand
-
         return cards2str(others_hand)
