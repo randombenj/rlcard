@@ -157,9 +157,11 @@ class JassGame:
         self.points[team_id] += 5
         point_difference = self.points[0] - self.points[1]
 
+        payoff = 1 if point_difference > 0 else -1
+
         return [
-            point_difference,      # team 0
-            point_difference * -1  # team 1
+            payoff,      # team 0
+            payoff * -1  # team 1
         ]
 
 

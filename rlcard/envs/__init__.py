@@ -42,3 +42,9 @@ register(
     env_id='gin-rummy',
     entry_point='rlcard.envs.gin_rummy:GinRummyEnv',
 )
+
+register(
+    env_id='jass',
+    entry_point='rlcard.envs.jass:JassEnv',
+)
+

@@ -2,6 +2,7 @@ import numpy as np
 from collections import OrderedDict
 
 from rlcard.envs import Env
+from rlcard.games.jass.utils import CARD_VALUES
 from rlcard.games.jass import Game
 
 DEFAULT_GAME_CONFIG = {
@@ -21,7 +22,7 @@ class JassEnv(Env):
 
         super().__init__(config)
 
-        self.rank2score = {"A":11, "6":6, "7":7, "8":8, "9":9, "T":10, "J":2, "Q":3, "K":4}
+        self.rank2score = CARD_VALUES
         self.state_shape = [[9] for _ in range(self.num_players)]
         self.action_shape = [[9] for _ in range(self.num_players)]
 
@@ -45,6 +46,7 @@ class JassEnv(Env):
         Returns:
             observation (list): combine the player's score and dealer's observable score for observation
         '''
+        print(state)
         cards = state['state']
         my_cards = cards[0]
         dealer_cards = cards[1]
@@ -77,17 +79,7 @@ class JassEnv(Env):
         Returns:
            payoffs (list): list of payoffs
         '''
-        payoffs = []
-
-        for i in range(self.num_players):
-            if self.game.winner['player' + str(i)] == 2:
-                payoffs.append(1)  # Dealer bust or player get higher score than dealer
-            elif self.game.winner['player' + str(i)] == 1:
-                payoffs.append(0)  # Dealer and player tie
-            else:
-                payoffs.append(-1)  # Player bust or Dealer get higher score than player
-
-        return np.array(payoffs)
+        return np.array(self.game.get_payoffs())
 
 
     def _decode_action(self, action_id):
