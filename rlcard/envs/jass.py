@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 from rlcard.envs import Env
 from rlcard.games.base import Card
-from rlcard.games.jass.utils import CARD_RANK_STR_INDEX, CARD_VALUES, SUIT_OFFSET, one_hot_encode_cards, one_hot_encode_trump
+from rlcard.games.jass.utils import ACTION_LIST, CARD_VALUES, SUIT_OFFSET, one_hot_encode_cards, one_hot_encode_trump
 from rlcard.games.jass import Game
 
 DEFAULT_GAME_CONFIG = {
@@ -21,13 +21,7 @@ class JassEnv(Env):
         self.default_game_config = DEFAULT_GAME_CONFIG
         self.game = Game()
 
-        valid_suit = ['S', 'H', 'D', 'C']
-        valid_rank = ['A', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
-
-        self.actions = []
-        for suit in valid_suit:
-            for rank in valid_rank:
-                self.actions.append(Card(suit, rank))
+        self.actions = ACTION_LIST
 
         super().__init__(config)
 
@@ -79,6 +73,23 @@ class JassEnv(Env):
            payoffs (list): list of payoffs
         '''
         return np.array(self.game.get_payoffs())
+
+    def get_perfect_information(self):
+        ''' Get the perfect information of the current state
+
+        Returns:
+            (dict): A dictionary of all the perfect information of the current state
+        '''
+        state = {}
+        state['num_players'] = self.num_players
+        state['hand_cards'] = [player.current_hand for player in self.game.players]
+        state['played_cards'] = self.game.round.played_cards
+        state['trump'] = self.game.round.trump
+        state['current_player'] = self.game.round.current_player
+        state['legal_actions'] = self.game.round.get_legal_actions(
+            self.game.players, state['current_player'])
+        return state
+
 
 
     def _decode_action(self, action_id):

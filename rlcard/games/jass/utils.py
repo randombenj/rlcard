@@ -43,6 +43,12 @@ with open(type_card_path, 'r') as f:
 
 """
 
+VALID_SUIT = ['S', 'H', 'D', 'C']
+VALID_RANK = ['A', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
+
+ACTION_LIST = [Card(suit, rank) for rank in VALID_RANK for suit in VALID_SUIT]
+
+
 def did_push(trump):
     return trump == "P"
 

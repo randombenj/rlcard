@@ -32,8 +32,6 @@ def gather_observations(env, actions, num_rand_steps):
         rand_iter(num_rand_steps)
         legals = list(state['legal_actions'].keys())
 
-        print(f"LEGAL: {[get_card_name_by_index(card) for card in legals]}")
-
         action = legals[actions[action_idx] % len(legals)]
         # Environment steps
         next_state, next_player_id = env.step(action)
