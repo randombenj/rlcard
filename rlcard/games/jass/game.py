@@ -33,7 +33,7 @@ class JassGame:
 
         self.teams = [[1, 3], [2, 4]]
         # two teams playing agains one another
-        self.payoffs = [0 for _ in range(len(self.teams))]
+        self.points = [0 for _ in range(len(self.teams))]
 
         # initialize players
         self.players = [Player(num, self.np_random)
@@ -70,14 +70,12 @@ class JassGame:
 
         # perfrom action
         player = self.players[self.round.current_player]
-        payoffs = self.round.proceed_round(player, action)
+        next_id = self.round.proceed_round(player, action)
         #self.judger.calc_playable_cards(player, self.round.trump)
         if self.judger.judge_game(self.players, self.round.current_player):
             # ROUND OVER
             self.finished = True
 
-        next_id = (player.player_id+1) % len(self.players)
-        self.round.current_player = next_id
 
         # get next state
         state = self.get_state(next_id)
@@ -149,12 +147,20 @@ class JassGame:
 
     def get_payoffs(self):
         for points_in_one_round in self.round.points:
-            for player_id, points in points_in_one_round:
-                team_id = 0 if player_id.player_id in self.teams[0] else 1
-                self.payoffs[team_id] += points
+            for player_id, points in points_in_one_round["points"]:
+                team_id = 0 if points_in_one_round["winner"] in self.teams[0] else 1
+                self.points[team_id] += points
 
-        print(self.payoffs)
-        return self.payoffs
+        # last win is +5 points
+        last_points_in_one_round = self.round.points[-1]
+        team_id = 0 if points_in_one_round["winner"] in self.teams[0] else 1
+        self.points[team_id] += 5
+        point_difference = self.points[0] - self.points[1]
+
+        return [
+            point_difference,      # team 0
+            point_difference * -1  # team 1
+        ]
 
 
     def _get_others_current_hand(self, player):

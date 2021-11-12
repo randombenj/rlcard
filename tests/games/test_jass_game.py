@@ -46,12 +46,16 @@ def test_get_payoffs():
     game.init_game()
     while not game.is_over():
         actions = game.get_legal_actions()
-        print(actions)
+        #print(actions)
         action = np.random.choice(actions)
         state, _ = game.step(action)
 
     payoffs = game.get_payoffs()
+    points = game.points
+
+    assert np.sum(points) == 157
+
     total = 0
     for payoff in payoffs:
         total += payoff
-    assert total == 157
+    assert total == 0

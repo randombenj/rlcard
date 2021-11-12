@@ -10,7 +10,7 @@ from rlcard.games.base import Card
 from rlcard.games.jass import Dealer, Player
 from rlcard.games.jass.player import JassPlayer
 from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, jass_sort_card
-from rlcard.games.jass.utils import CARD_RANK_STR, CARD_RANK_STR_INDEX
+from rlcard.games.jass.utils import CARD_INDEX, CARD_RANK_STR_INDEX
 
 
 class JassRound:
@@ -21,12 +21,10 @@ class JassRound:
         self.played_cards = played_cards
         self.current_player = 0
 
-        self.greater_player = None
         self.dealer = Dealer(self.np_random)
-        self.deck_str = cards2str(self.dealer.deck)
         # cards lying on the table
-        self.table_cards = []
-        self.points = []
+        self.table_cards: List[Tuple[JassPlayer, Card]] = []
+        self.points: List[dict] = []
 
     def initiate(self, players):
         ''' Call dealer to deal cards and bid landlord.
@@ -170,6 +168,7 @@ class JassRound:
             object of JassPlayer: player who played current biggest cards.
         '''
 
+        print(f"Player {player.player_id}, plays: {action}")
         player.play(action)
         self.table_cards.append((player, action))
         self.played_cards[self.current_player][SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
@@ -181,6 +180,8 @@ class JassRound:
             # round is over
             self.current_player = self.count_points()
             self.table_cards = []
+        else:
+            self.current_player = (self.current_player + 1) % 4
 
         return self.current_player
 
@@ -190,6 +191,7 @@ class JassRound:
         Count the current points of both teams and returns the winner id
         """
         points = []
+        winner = None
         for player, card in self.table_cards:
             if self.trump == card.suit:
                 point = CARD_VALUES[self.trump][card.rank]
@@ -198,12 +200,27 @@ class JassRound:
                     point = CARD_VALUES["U"][card.rank]
                 else:
                     point = CARD_VALUES["O"][card.rank]
-
-            print(self.table_cards)
             points.append((player, point))
-        self.points.append(points)
 
-        return max(points, key=lambda k: k[1])[0].player_id
+        # calculate winner of the round
+
+        #import pdb; pdb.set_trace()
+        trump_cards_in_round = [(p, c) for (p, c) in self.table_cards if c.suit == self.trump]
+        if any(trump_cards_in_round):
+            # if trump was played, the winner is the highest trump
+            winner, _ = sorted(trump_cards_in_round, key=lambda p_c: TRUMP_INDEX[p_c[1].rank], reverse=True)[0]
+        else:
+            base_suit = self.table_cards[0][1].suit
+            suit_cards_in_round = [(p, c) for (p, c) in self.table_cards if c.suit == base_suit]
+            if self.trump == "U":
+                winner, _ = sorted(suit_cards_in_round, key=lambda p_c: CARD_INDEX["U"][p_c[1].rank], reverse=True)[0]
+            else:
+                winner, _ = sorted(suit_cards_in_round, key=lambda p_c: CARD_INDEX["O"][p_c[1].rank], reverse=True)[0]
+
+        self.points.append({"winner": winner.player_id, "points": points})
+
+        print(f"Points {points}, next player: {winner.player_id}")
+        return winner.player_id
         
     #def update_public(self, action):
     #    ''' Update public trace and played cards
