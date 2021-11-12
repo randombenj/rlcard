@@ -162,13 +162,3 @@ class JassJudger:
                         # play anything except a lower trump
                         return [c for c in hand if c != lower_trump_cards]
 
-    @staticmethod
-    def judge_payoffs(players):
-        payoffs = np.array([0, 0, 0])
-        if winner_id == landlord_id:
-            payoffs[landlord_id] = 1
-        else:
-            for index, _ in enumerate(payoffs):
-                if index != landlord_id:
-                    payoffs[index] = 1
-        return payoffs

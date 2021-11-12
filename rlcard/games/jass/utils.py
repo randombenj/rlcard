@@ -46,6 +46,17 @@ with open(type_card_path, 'r') as f:
 def did_push(trump):
     return trump == "P"
 
+def get_card_name_by_index(index: int) -> Card:
+    valid_suit = ['S', 'H', 'D', 'C']
+    valid_rank = ['A', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
+
+    actions = []
+    for suit in valid_suit:
+        for rank in valid_rank:
+            actions.append(Card(suit, rank))
+
+    return actions[index]
+
 SUIT_OFFSET = {
     "D": 0,
     "H": 8,

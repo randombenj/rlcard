@@ -2,6 +2,7 @@ import numpy as np
 from collections import OrderedDict
 
 from rlcard.envs import Env
+from rlcard.games.base import Card
 from rlcard.games.jass.utils import CARD_RANK_STR_INDEX, CARD_VALUES, SUIT_OFFSET, one_hot_encode_cards, one_hot_encode_trump
 from rlcard.games.jass import Game
 
@@ -20,9 +21,17 @@ class JassEnv(Env):
         self.default_game_config = DEFAULT_GAME_CONFIG
         self.game = Game()
 
+        valid_suit = ['S', 'H', 'D', 'C']
+        valid_rank = ['A', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
+
+        self.actions = []
+        for suit in valid_suit:
+            for rank in valid_rank:
+                self.actions.append(Card(suit, rank))
+
         super().__init__(config)
 
-        self.rank2score = CARD_VALUES
+        # FIXME
         self.state_shape = [[9] for _ in range(self.num_players)]
         self.action_shape = [[9] for _ in range(self.num_players)]
 
@@ -34,7 +43,7 @@ class JassEnv(Env):
         '''
 
         legal_actions = self.game.state['actions']
-        legal_actions = OrderedDict({SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]: None for action in legal_actions})
+        legal_actions = OrderedDict({self.actions.index(Card(action.suit, action.rank)): None for action in legal_actions})
         return legal_actions
 
     def _extract_state(self, state):

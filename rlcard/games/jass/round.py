@@ -168,10 +168,9 @@ class JassRound:
             object of JassPlayer: player who played current biggest cards.
         '''
 
-        print(f"Player {player.player_id}, plays: {action}")
         player.play(action)
         self.table_cards.append((player, action))
-        self.played_cards[self.current_player].append(f"{action.suit}{action.rank}")#  [SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
+        self.played_cards[self.current_player] += f"{action.suit}{action.rank}" #  [SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
         #self.played_cards.append(action)
 
         #self.update_public(action)
@@ -219,7 +218,6 @@ class JassRound:
 
         self.points.append({"winner": winner.player_id, "points": points})
 
-        print(f"Points {points}, next player: {winner.player_id}")
         return winner.player_id
         
     #def update_public(self, action):

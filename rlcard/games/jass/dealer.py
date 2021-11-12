@@ -33,12 +33,14 @@ class JassDealer:
         Args:
             players (list): list of Jass objects
         '''
+
         hand_num = (len(self.deck)) // len(players)
         for index, player in enumerate(players):
             current_hand = self.deck[index*hand_num:(index+1)*hand_num]
             #current_hand.sort(key=functools.cmp_to_key(jass_sort_card))
             player.set_current_hand(current_hand)
             player.initial_hand = cards2str(player.current_hand)
+
 
     def determine_trump(self, players, trump_player: int):
         ''' Determine trump according to players' hand

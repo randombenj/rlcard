@@ -107,6 +107,7 @@ class JassGame:
             actions = []
         else:
             actions = list(player.available_actions(self.judger, self.round.trump, self.round.table_cards))
+
         state = player.get_state(self.round.public, others_hands, num_cards_left, actions)
 
         return state
@@ -116,9 +117,9 @@ class JassGame:
         ''' Return the total number of abstract acitons
 
         Returns:
-            int: the total number of abstract actions of doudizhu
+            int: the total number of actions in jass
         '''
-        return 32
+        return 36
 
     def get_player_id(self):
         ''' Return current player's id

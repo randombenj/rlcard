@@ -3,7 +3,7 @@ import numpy as np
 import rlcard
 from rlcard.agents.random_agent import RandomAgent
 #from rlcard.games.jass.utils import ACTION_LIST
-#from .determism_util import is_deterministic
+from .determism_util import is_deterministic
 
 
 
@@ -13,10 +13,12 @@ def test_reset_and_extract_state():
     state, _ = env.reset()
     assert state['obs'].size, 240
 
-"""
-def test_is_deterministic(self):
-    self.assertTrue(is_deterministic('uno'))
 
+def test_is_deterministic():
+    assert is_deterministic('jass')
+
+
+"""
 def test_get_legal_actions():
     env = rlcard.make('uno')
     env.set_agents([RandomAgent(env.num_actions) for _ in range(env.num_players)])

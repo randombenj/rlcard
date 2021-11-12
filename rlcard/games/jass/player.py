@@ -3,7 +3,7 @@
 '''
 import functools
 
-from rlcard.games.jass.utils import cards2str_with_suit, get_gt_cards
+from rlcard.games.jass.utils import cards2str_with_suit
 from rlcard.games.jass.utils import cards2str, get_jass_sort_card
 
 
