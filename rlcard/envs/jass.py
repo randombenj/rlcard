@@ -51,12 +51,12 @@ class JassEnv(Env):
         '''
         current_hand = one_hot_encode_cards(state['current_hand'])
         others_hand = one_hot_encode_cards(state['others_hand'])
-        played_cards = one_hot_encode_cards(state['played_cards'])
+        played_cards = [one_hot_encode_cards(c) for c in state['played_cards']]
         trump = one_hot_encode_trump(state['trump'])
 
         obs = np.concatenate((
             current_hand,
-            others_hand,
+            np.concatenate(others_hand),
             played_cards,
             trump
         ))

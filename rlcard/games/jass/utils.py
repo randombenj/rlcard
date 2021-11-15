@@ -11,37 +11,6 @@ from typing import List
 import rlcard
 from rlcard.games.base import Card
 
-"""
-# Read required docs
-ROOT_PATH = rlcard.__path__[0]
-
-if not os.path.isfile(os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/action_space.txt')) \
-        or not os.path.isfile(os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/card_type.json')) \
-        or not os.path.isfile(os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/type_card.json')):
-    import zipfile
-    with zipfile.ZipFile(os.path.join(ROOT_PATH, 'games/doudizhu/jsondata.zip'),"r") as zip_ref:
-        zip_ref.extractall(os.path.join(ROOT_PATH, 'games/doudizhu/'))
-
-# Action space
-action_space_path = os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/action_space.txt')
-with open(action_space_path, 'r') as f:
-    ID_2_ACTION = f.readline().strip().split()
-    ACTION_2_ID = {}
-    for i, action in enumerate(ID_2_ACTION):
-        ACTION_2_ID[action] = i
-
-# a map of card to its type. Also return both dict and list to accelerate
-card_type_path = os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/card_type.json')
-with open(card_type_path, 'r') as f:
-    data = json.load(f, object_pairs_hook=OrderedDict)
-    CARD_TYPE = (data, list(data), set(data))
-
-# a map of type to its cards
-type_card_path = os.path.join(ROOT_PATH, 'games/doudizhu/jsondata/type_card.json')
-with open(type_card_path, 'r') as f:
-    TYPE_CARD = json.load(f, object_pairs_hook=OrderedDict)
-
-"""
 
 VALID_SUIT = ['S', 'H', 'D', 'C']
 VALID_RANK = ['A', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
@@ -75,14 +44,14 @@ TRUMP_TYPE_INDEX = {'D': 0, "H": 1, "S": 2, "C": 3, "O": 4, "U": 5, "P": 6}
 # rank list of solo character of cards
 CARD_RANK_STR = ['6', '7', '8', '9', 'T', 'J', 'Q', 'K','A']
 CARD_RANK_STR_INDEX = {
-    '6': 0, 
+    '6': 0,
     '7': 1,
     '8': 2,
-    '9': 3, 
-    'T': 4, 
-    'J': 5, 
+    '9': 3,
+    'T': 4,
+    'J': 5,
     'Q': 6,
-    'K': 7, 
+    'K': 7,
     'A': 8
 }
 
@@ -317,7 +286,7 @@ def encode_cards(plane, cards):
         plane[layer][rank] = 1
         plane[0][rank] = 0
 
-
+"""
 def get_gt_cards(player, greater_player, trump):
     ''' Provide player's cards which are greater than the ones played by
     previous player in one round
@@ -354,3 +323,4 @@ def get_gt_cards(player, greater_player, trump):
                         # if self.contains_cards(current_hand, cards):
                         gt_cards.append(cards)
     return gt_cards
+"""

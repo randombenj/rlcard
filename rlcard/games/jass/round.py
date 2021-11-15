@@ -34,8 +34,8 @@ class JassRound:
         '''
         self.trump = self.dealer.determine_trump(players, self.current_player)
         self.public = {
-            'trump': self.trump, 
-            'table_cards': self.table_cards, 
+            'trump': self.trump,
+            'table_cards': self.table_cards,
             'played_cards': self.played_cards
         }
 
@@ -52,7 +52,7 @@ class JassRound:
         # get the color of the first played card and check if we have that color
         color_played = table_cards[0].suit
         color_hand = [c for c in hand if c.suit == color_played]
-        have_color_played = any(color_hand) 
+        have_color_played = any(color_hand)
 
         if TRUMP_TYPE_INDEX[self.trump] >= 4:
             # obe or une declared
@@ -154,8 +154,8 @@ class JassRound:
                     else:
                         # play anything except a lower trump
                         return [c for c in hand if c != lower_trump_cards]
-        
-        
+
+
 
     def proceed_round(self, player, action):
         ''' Call other Classes's functions to keep one round running
@@ -170,10 +170,7 @@ class JassRound:
 
         player.play(action)
         self.table_cards.append((player, action))
-        self.played_cards += f"{action.suit}{action.rank}" #  [SUIT_OFFSET[action.suit] + CARD_RANK_STR_INDEX[action.rank]] += 1
-        #self.played_cards.append(action)
-
-        #self.update_public(action)
+        self.played_cards[player.player_id] += f"{action.suit}{action.rank}"
 
         if len(self.table_cards) == 4:
             # round is over
@@ -219,73 +216,3 @@ class JassRound:
         self.points.append({"winner": winner.player_id, "points": points})
 
         return winner.player_id
-        
-    #def update_public(self, action):
-    #    ''' Update public trace and played cards
-#
-    #    Args:
-    #        action(str): string of legal specific action
-    #    '''
-    #    self.table_cards.append((self.current_player, action))
-    #    #self.trace.append((self.current_player, action))
-    #    self.played_cards[self.current_player][CARD_RANK_STR_INDEX[action]] = 1
-"""
-    @staticmethod
-    def cards_ndarray_to_str(ndarray_cards):
-        result = []
-        for cards in ndarray_cards:
-            _result = []
-            for i, _ in enumerate(cards):
-                if cards[i] != 0:
-                    _result.extend([CARD_RANK_STR[i]] * cards[i])
-            result.append(''.join(_result))
-        return result
-
-
-
-    def step_back(self, players):
-        ''' Reverse the last action
-
-        Args:
-            players (list): list of DoudizhuPlayer objects
-        Returns:
-            The last player id and the cards played
-        '''
-        player_id, cards = self.trace.pop()
-        self.current_player = player_id
-        if (cards != 'pass'):
-            for card in cards:
-                # self.played_cards.remove(card)
-                self.played_cards[player_id][CARD_RANK_STR_INDEX[card]] -= 1
-            self.public['played_cards'] = self.cards_ndarray_to_str(self.played_cards)
-        greater_player_id = self.find_last_greater_player_id_in_trace()
-        if (greater_player_id is not None):
-            self.greater_player = players[greater_player_id]
-        else:
-            self.greater_player = None
-        return player_id, cards
-
-    def find_last_greater_player_id_in_trace(self):
-        ''' Find the last greater_player's id in trace
-
-        Returns:
-            The last greater_player's id in trace
-        '''
-        for i in range(len(self.trace) - 1, -1, -1):
-            _id, action = self.trace[i]
-            if (action != 'pass'):
-                return _id
-        return None
-
-    def find_last_played_cards_in_trace(self, player_id):
-        ''' Find the player_id's last played_cards in trace
-
-        Returns:
-            The player_id's last played_cards in trace
-        '''
-        for i in range(len(self.trace) - 1, -1, -1):
-            _id, action = self.trace[i]
-            if (_id == player_id and action != 'pass'):
-                return action
-        return None
-"""

@@ -40,7 +40,7 @@ class JassGame:
                         for num in range(self.num_players)]
 
         # initialize round to deal cards and determine trump
-        self.played_cards = ""
+        self.played_cards = ["" for _ in range(self.num_players)]
         self.round = Round(self.np_random, self.played_cards)
         self.round.initiate(self.players)
 
@@ -153,11 +153,11 @@ class JassGame:
 
         # last win is +5 points
         last_points_in_one_round = self.round.points[-1]
-        team_id = 0 if points_in_one_round["winner"] in self.teams[0] else 1
+        team_id = 0 if last_points_in_one_round["winner"] in self.teams[0] else 1
         self.points[team_id] += 5
         point_difference = self.points[0] - self.points[1]
 
-        payoff = 1 if point_difference > 0 else -1
+        payoff = point_difference / 157
 
         return [
             payoff,       # team 0 p1
@@ -172,7 +172,7 @@ class JassGame:
         teammate = self.players[(player.player_id+2) % len(self.players)]
         other_player_2 = self.players[(player.player_id+3) % len(self.players)]
         others_hand = merge(
-            other_player_1.current_hand, teammate.current_hand, other_player_2.current_hand, 
+            other_player_1.current_hand, teammate.current_hand, other_player_2.current_hand,
             key=functools.cmp_to_key(get_jass_sort_card(self.round.trump))
         )
         return cards2str_with_suit(others_hand)
