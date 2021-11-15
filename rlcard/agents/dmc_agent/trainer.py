@@ -76,7 +76,7 @@ class DMCTrainer:
                  num_actor_devices=1,
                  num_actors = 5,
                  training_device=0,
-                 savedir='experiments/dmc_result',
+                 savedir='experiments/jass_results',
                  total_frames=100000000000,
                  exp_epsilon=0.01,
                  batch_size=32,

@@ -67,6 +67,8 @@ class DMCAgent:
     def eval_step(self, state):
         action_keys, values = self.predict(state)
 
+        print(f" => PREDICT WITH:\n\n{state}\n\n{action_keys}\n\n{values}\n\n")
+
         action_idx = np.argmax(values)
         action = action_keys[action_idx]
 

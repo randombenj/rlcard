@@ -3,7 +3,7 @@
 '''
 import functools
 
-from rlcard.games.jass.utils import cards2str_with_suit
+from rlcard.games.jass.utils import TRUMP, cards2str_with_suit, get_trump_based_on_selection_scores
 from rlcard.games.jass.utils import cards2str, get_jass_sort_card
 
 
@@ -37,9 +37,9 @@ class JassPlayer:
     def current_hand(self):
         return self._current_hand
 
-    def set_trump(self):
-        # TODO:
-        return "D"
+    def set_trump(self, is_forehand=True):
+        result = get_trump_based_on_selection_scores(self._current_hand, 0 if is_forehand else -1)
+        return TRUMP[result]
 
     def set_current_hand(self, value):
         self._current_hand = value

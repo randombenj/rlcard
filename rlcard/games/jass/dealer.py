@@ -58,7 +58,7 @@ class JassDealer:
         self.trump = players[trump_player].set_trump()
         if did_push(self.trump):
             # colleague chooses trump 'schiebe'
-            self.trump = player[trump_player + 2 % 4].set_trump()
+            self.trump = player[trump_player + 2 % 4].set_trump(is_forehand=False)
 
         for player in players:
             player.current_hand.sort(key=functools.cmp_to_key(get_jass_sort_card(self.trump)))

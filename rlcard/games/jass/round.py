@@ -170,7 +170,7 @@ class JassRound:
 
         player.play(action)
         self.table_cards.append((player, action))
-        self.played_cards[player.player_id] += f"{action.suit}{action.rank}"
+        self.played_cards[player.player_id] += f"{action.suit}{action.rank} "
 
         if len(self.table_cards) == 4:
             # round is over

@@ -82,6 +82,3 @@ def test_get_perfect_information():
     env = rlcard.make('jass')
     _, player_id = env.reset()
     assert player_id == env.get_perfect_information()['current_player']
-
-"""
-"""

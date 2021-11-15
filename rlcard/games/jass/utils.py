@@ -286,41 +286,193 @@ def encode_cards(plane, cards):
         plane[layer][rank] = 1
         plane[0][rank] = 0
 
-"""
-def get_gt_cards(player, greater_player, trump):
-    ''' Provide player's cards which are greater than the ones played by
-    previous player in one round
+import numpy as np
+import random
 
-    Args:
-        player (JassPlayer object): the player waiting to play cards
-        greater_player (JassPlayer object): the player who played current biggest cards.
-        trump (int): the current trump
+from jass.game.game_observation import GameObservation
+from jass.game.game_state_util import state_from_observation
+from jass.game.game_sim import GameSim
+from jass.game.game_util import convert_one_hot_encoded_cards_to_int_encoded_list, get_cards_encoded
+from jass.game.const import color_of_card
+from jass.game.const import *
 
-    Returns:
-        list: list of string of greater cards
+
+# Score for each card of a color from Ace to 6
+# score if the color is trump
+trump_score = [15, 10, 7, 25, 6, 19, 5, 5, 5]
+# score if the color is not trump
+no_trump_score = [9, 7, 5, 2, 1, 0, 0, 0, 0]
+# score if obenabe is selected (all colors)
+obenabe_score = [14, 10, 8, 7, 5, 0, 5, 0, 0,]
+# score if uneufe is selected (all colors)
+uneufe_score = [0, 2, 1, 1, 5, 5, 7, 9, 11]
+
+# jass is played counter clock wise so when player 3 starts next player is player 2
+def get_previous_player(current_player):
+    return current_player + 1 if current_player != 3 else 0
+
+def get_next_player(current_player):
+    return current_player - 1 if current_player != 0 else 3
+
+def calculate_trump_selection_score(cards, trump: int) -> int:
+    hand_int = convert_one_hot_encoded_cards_to_int_encoded_list(cards)
+    score = 0
+    for card in hand_int:
+        color = color_of_card[card]
+        offset = offset_of_card[card]
+        if color == trump:
+            score += trump_score[offset]
+        else:
+            score += no_trump_score[offset]
+    return score
+
+def calculate_obenabe_selection_score(cards) -> int:
+    hand_int = convert_one_hot_encoded_cards_to_int_encoded_list(cards)
+    score = 0
+    for card in hand_int:
+        offset = offset_of_card[card]
+        score += obenabe_score[offset]
+    return score
+
+def calculate_uneufe_selection_score(cards) -> int:
+    hand_int = convert_one_hot_encoded_cards_to_int_encoded_list(cards)
+    score = 0
+    for card in hand_int:
+        offset = offset_of_card[card]
+        score += uneufe_score[offset]
+    return score
+
+def get_trump_based_on_selection_scores(hand, forehand) -> int:
+    # data conversion from our hand to jasskit onehot
+    old_hand = hand
+    hand = np.zeros(36)
+    for h in old_hand:
+        hand[card_ids[f"{h.suit}{'10' if h.rank == 'T' else h.rank}"]] = 1
+
+    scores = [calculate_trump_selection_score(hand, trump) for trump in [D, H, S, C]]
+    scores.append(calculate_obenabe_selection_score(hand))
+    scores.append(calculate_uneufe_selection_score(hand))
+    best_score = np.max(scores)
+    result = None
+    if (best_score < 68) & (forehand != 0):
+        result = PUSH_ALT
+    else:
+        result = np.argmax(scores)
+
+    # convert to int as json serialization can't handle numpy datatypes
+    return int(result)
+
+def get_smallest_card(cards_int) -> int:
+    smallest_card = None
+    for card in cards_int:
+        offset = offset_of_card[card]
+        if (smallest_card is None):
+            smallest_card = card
+        elif (offset_of_card[smallest_card] < offset):
+            smallest_card = card
+    return smallest_card
+
+def get_highest_card(cards_int) -> int:
+    highest_card = None
+    for card in cards_int:
+        offset = offset_of_card[card]
+        if (highest_card is None):
+            highest_card = card
+        elif (offset_of_card[highest_card] > offset):
+            highest_card = card
+    return highest_card
+
+def get_highest_trump(trumps) -> int:
+    trump = color_of_card[trumps[0]]
+    if np.isin(color_offset[trump] + J_offset, trumps):
+        return color_offset[trump] + J_offset
+    elif np.isin(color_offset[trump] + Nine_offset, trumps):
+        return color_offset[trump] + Nine_offset
+    else:
+        return np.min(trumps)
+
+def get_cards_from_color(cards_int, color):
+    cards_with_given_color = []
+    for card in cards_int:
+        if color_of_card[card] == color:
+            cards_with_given_color.append(card)
+    return cards_with_given_color
+
+
+def random_play_to_the_end(gameSim : GameSim):
     '''
-    # add 'pass' to legal actions
-    gt_cards = []
-    current_hand = cards2str_with_suit(player.current_hand)
-    target_cards = greater_player.played_cards
-    target_types = CARD_TYPE[0][target_cards]
-    type_dict = {}
-    for card_type, weight in target_types:
-        if card_type not in type_dict:
-            type_dict[card_type] = weight
-    if 'rocket' in type_dict:
-        return gt_cards
-    type_dict['rocket'] = -1
-    if 'bomb' not in type_dict:
-        type_dict['bomb'] = -1
-    for card_type, weight in type_dict.items():
-        candidate = TYPE_CARD[card_type]
-        for can_weight, cards_list in candidate.items():
-            if int(can_weight) > int(weight):
-                for cards in cards_list:
-                    # TODO: improve efficiency
-                    if cards not in gt_cards and contains_cards(current_hand, cards):
-                        # if self.contains_cards(current_hand, cards):
-                        gt_cards.append(cards)
-    return gt_cards
-"""
+    Returns the GameState of finished game. Cards are played random but trump decision is based on selection scores.
+    '''
+    # simulate playing the game to the end with random moves
+    while not gameSim.is_done():
+        obs = gameSim.get_observation()
+        if gameSim.state.trump < 0:
+            trump = get_trump_based_on_selection_scores(obs.hand, obs.forehand)
+            gameSim.action_trump(trump)
+        else:
+            valid_cards = gameSim.rule.get_valid_cards_from_obs(obs)
+            card = np.random.default_rng().choice(np.flatnonzero(valid_cards))
+            gameSim.action_play_card(card)
+    return gameSim.state
+
+def get_game_state_with_random_hand_for_other_players(obs : GameObservation):
+    # create random hand cards for the other players
+    hands = get_random_hand_for_other_players(obs)
+    # create GameState based on given observation with random hand cards 
+    # for the other players
+    gameState = state_from_observation(obs, hands)
+    return gameState
+
+def get_random_hand_for_other_players(obs : GameObservation):
+    hands_one_hot_encoded = np.zeros(shape=[4, 36], dtype=np.int32)
+    hands = dict([
+        (0, []),
+        (1, []),
+        (2, []),
+        (3, [])
+    ])
+
+    if obs.player_view != obs.player:
+        Exception("Player view belongs not to player whos turn it is!")
+    
+    available_cards_one_hot_encoded = get_available_cards_from_observation(obs)
+    cards = np.flatnonzero(available_cards_one_hot_encoded).tolist()
+    first_of_trick = obs.trick_first_player[obs.nr_tricks]
+    last_of_trick = first_of_trick + 1 if first_of_trick != 3 else 0
+
+    random.shuffle(cards)
+    for card in cards:
+        #print(last_of_trick)
+        if last_of_trick == obs.player:
+            last_of_trick = get_previous_player(last_of_trick)
+        hands[last_of_trick].append(card)
+        last_of_trick = get_previous_player(last_of_trick)
+    
+    players = [0, 1, 2, 3]
+    players.remove(obs.player)
+    hands_one_hot_encoded[obs.player] = obs.hand
+    for p in players:
+        hands_one_hot_encoded[p] = get_cards_encoded(hands[p])
+    
+    return hands_one_hot_encoded
+
+
+def get_available_cards_from_observation(obs : GameObservation) -> np.ndarray:
+    '''
+    returns:
+        Available cards in this game observation as one hot encoded array.
+    '''
+    available_cards = np.ones(shape=[36], dtype=np.int32)
+    # remove already played cards
+    for trick in obs.tricks:
+        for card in trick:
+            if(card >= 0):
+                available_cards[card] = 0
+    # remove cards from current unfinished trick
+    for card in obs.current_trick:
+        if(card >= 0):
+            available_cards[card] = 0
+    # remove cards of player we know the hand
+    for card in np.flatnonzero(obs.hand):
+        available_cards[card] = 0
+    return available_cards
