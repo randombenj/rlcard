@@ -41,7 +41,7 @@ class Card:
         Returns:
             string: the combination of rank and suit of a card. Eg: AS, 5H, JD, 3C, ...
         '''
-        return self.rank + self.suit
+        return self.suit + self.rank 
 
     def __repr__(self):
         return f"Card({self.suit}{self.rank})"

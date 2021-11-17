@@ -52,6 +52,7 @@ def learn(position,
     with lock:
         values = agent.forward(state, action)
         loss = compute_loss(values, target)
+
         stats = {
             'mean_episode_return_'+str(position): torch.mean(torch.stack([_r for _r in mean_episode_return_buf[position]])).item(),
             'loss_'+str(position): loss.item(),

@@ -35,7 +35,7 @@ if __name__ == '__main__':
                     help='Load an existing model')
     parser.add_argument('--xpid', default='doudizhu',
                         help='Experiment id (default: doudizhu)')
-    parser.add_argument('--savedir', default='experiments/dmc_result',
+    parser.add_argument('--savedir', default='experiments/jass_result',
                         help='Root dir where experiment data will be saved')
     parser.add_argument('--save_interval', default=30, type=int,
                         help='Time interval (in minutes) at which to save the model')

@@ -9,7 +9,7 @@ from rlcard.games.base import Card
 
 from rlcard.games.jass import Dealer, Player
 from rlcard.games.jass.player import JassPlayer
-from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, get_jass_sort_card
+from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_legal_actions, get_lower_trump, get_jass_sort_card
 from rlcard.games.jass.utils import CARD_INDEX, CARD_RANK_STR_INDEX
 
 
@@ -40,122 +40,11 @@ class JassRound:
         }
 
     def get_legal_actions(self, players, player_id):
-        hand = players[player_id].current_hand
-        table_cards = [c[1] for c in self.table_cards]
-        trump = self.trump
-        move_nr = len(table_cards)
-
-        # play anything on the first move
-        if move_nr == 0:
-            return hand
-
-        # get the color of the first played card and check if we have that color
-        color_played = table_cards[0].suit
-        color_hand = [c for c in hand if c.suit == color_played]
-        have_color_played = any(color_hand)
-
-        if TRUMP_TYPE_INDEX[self.trump] >= 4:
-            # obe or une declared
-            if have_color_played:
-                # must give the correct color
-                return color_hand
-            else:
-                # play anything, if we don't have the color
-                return hand
-        else:
-            #
-            # round with trumps declared (not 'obe' or 'une')
-            #
-
-            # check number of trumps we have and number of cards left, in order to simplify some of the conditions
-            number_of_trumps = len(color_hand)
-            number_of_cards = len(hand)
-
-            #
-            # the played color was trump
-            #
-            if color_played == trump:
-                if number_of_trumps == 0:
-                    # no more trumps, play anything
-                    return hand
-                elif number_of_trumps == 1:
-                    if Card(trump, 'J') in hand:
-                        # we have only trump jack, so we can play anything
-                        return hand
-                    else:
-                        # we have just one trump and must play it
-                        return [h for h in hand if h.suit == trump]
-                else:
-                    # we have more than one trump, so we must play one of them
-                    return [h for h in hand if h.suit == trump]
-            #
-            # the played color was not trump
-            #
-            else:
-                # check if anybody else (player 1 or player 2) played a trump, and if yes how high
-                lowest_trump_played = None
-                trump_played = False
-
-                if move_nr > 1:
-                    # check player 1
-                    if table_cards[1].suit == trump:
-                        trump_played = True
-                        lowest_trump_played = table_cards[1]
-                    # check player 2
-                    if move_nr == 3:
-                        if table_cards[2].suit == trump:
-                            trump_played = True
-                            if lowest_trump_played is not None:
-                                # 2 trumps were played, so we must compare
-                                if TRUMP_INDEX[lowest_trump_played.rank] < TRUMP_INDEX[table_cards[2].rank]:
-                                    # move from player 2 is lower (as its index value is higher)
-                                    lowest_trump_played = table_cards[2]
-                            else:
-                                # this is the only trump played, so it is the lowest
-                                lowest_trump_played = table_cards[2]
-
-                #
-                # nobody played a trump, so we do not need to consider any restrictions on playing trump ourselves
-                #
-                if not trump_played:
-                    if have_color_played:
-                        # must give a color or can give any trump
-                        trump_cards = [h for h in hand if h.suit == trump]
-                        return color_hand + trump_cards
-                    else:
-                        # we do not have the color, so we can play anything, including any trump
-                        return hand
-
-                #
-                # somebody played a trump, so we have the restriction that we can not play a lower trump, with
-                # the exception if we only have trump left
-                #
-                else:
-                    if number_of_trumps == number_of_cards:
-                        # we have only trump left, so we can give any of them
-                        return hand
-                    else:
-                        #
-                        # find the valid trumps to play
-                        #
-
-                        # all trumps in hand
-                        trump_cards = [h for h in hand if h.suit == trump]
-
-                        # higher trump cards in hand
-                        higher_trump_cards = get_higher_trump(trump_cards, lowest_trump_played)
-
-                        # lower trump cards in hand
-                        lower_trump_cards = get_lower_trump(trump_cards, lowest_trump_played)
-
-                    if have_color_played:
-                        # must give a color or a higher trump
-                        return color_hand + higher_trump_cards
-                    else:
-                        # play anything except a lower trump
-                        return [c for c in hand if c != lower_trump_cards]
-
-
+        return get_legal_actions(
+            hand=players[player_id].current_hand, 
+            table_cards=[c[1] for c in self.table_cards],
+            trump=self.trump
+        )
 
     def proceed_round(self, player, action):
         ''' Call other Classes's functions to keep one round running

@@ -9,7 +9,7 @@ from bisect import bisect_left
 from rlcard.games.jass.player import JassPlayer
 
 from rlcard.games.base import Card
-from rlcard.games.jass.utils import CARD_RANK_STR, CARD_RANK_STR_INDEX
+from rlcard.games.jass.utils import CARD_RANK_STR, CARD_RANK_STR_INDEX, get_legal_actions
 from rlcard.games.jass.utils import SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_lower_trump, get_jass_sort_card
 from rlcard.games.jass.utils import cards2str, contains_cards
 
@@ -48,6 +48,14 @@ class JassJudger:
 
     @staticmethod
     def get_playable_cards(player: JassPlayer, trump: str, table_cards: List[Tuple[JassPlayer, Card]]) -> List[Card]:
+        return get_legal_actions(
+            hand=player.current_hand, 
+            table_cards=[c[1] for c in table_cards],
+            trump=trump
+        )
+
+
+
         hand = player.current_hand
         table_cards = [c[1] for c in table_cards]
         move_nr = len(table_cards)

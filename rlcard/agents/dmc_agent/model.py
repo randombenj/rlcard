@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 import numpy as np
 
 import torch
@@ -48,7 +49,7 @@ class DMCAgent:
                  exp_epsilon=0.01,
                  device=0):
         self.use_raw = False
-        self.device = torch.device('cuda:'+str(device))
+        self.device = torch.device('cuda:' + str(device))
         self.net = DMCNet(state_shape, action_shape, mlp_layers).to(self.device)
         self.exp_epsilon = exp_epsilon
         self.action_shape = action_shape
@@ -67,13 +68,11 @@ class DMCAgent:
     def eval_step(self, state):
         action_keys, values = self.predict(state)
 
-        print(f" => PREDICT WITH:\n\n{state}\n\n{action_keys}\n\n{values}\n\n")
-
         action_idx = np.argmax(values)
         action = action_keys[action_idx]
 
         info = {}
-        info['values'] = {state['raw_legal_actions'][i]: float(values[i]) for i in range(len(action_keys))}
+        #info['values'] = {state['raw_legal_actions'][i]: float(values[i]) for i in range(len(action_keys))}
 
         return action, info
 
@@ -126,7 +125,7 @@ class DMCModel:
                  mlp_layers=[512,512,512,512,512],
                  exp_epsilon=0.01,
                  device=0):
-        self.agents = []
+        self.agents: List[DMCAgent] = []
         for player_id in range(len(state_shape)):
             agent = DMCAgent(state_shape[player_id],
                              action_shape[player_id],
