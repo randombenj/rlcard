@@ -295,6 +295,7 @@ from jass.game.game_sim import GameSim
 from jass.game.game_util import convert_one_hot_encoded_cards_to_int_encoded_list, get_cards_encoded
 from jass.game.const import color_of_card
 from jass.game.const import *
+from jass.game.rule_schieber import RuleSchieber
 
 
 # Score for each card of a color from Ace to 6
@@ -363,6 +364,37 @@ def get_trump_based_on_selection_scores(hand, forehand) -> int:
     return int(result)
 
 def get_legal_actions(hand: List[Card], trump: str, table_cards: List[Card]) -> List[Card]:
+    # well our logic seems to be broken, so lets use the jasskit one
+    rule = RuleSchieber()
+
+    def __cards_to_one_hot(cards):
+        cards_one_hot = np.zeros(36)
+        for c in cards:
+            cards_one_hot[card_ids[f"{c.suit}{c.rank if c.rank != 'T' else '10'}"]] = 1
+        return cards_one_hot
+
+    valid_cards = rule.get_valid_cards(
+        hand=__cards_to_one_hot(hand),
+        current_trick=[card_ids[f"{c.suit}{c.rank if c.rank != 'T' else '10'}"] for c in table_cards],
+        trump=TRUMP_TYPE_INDEX[trump],
+        move_nr=len(table_cards)
+    )
+
+    print("valid", valid_cards)
+    def __index_to_cards(index):
+        """input_cards as a list of indexes"""
+
+        cards = []
+        for i in index:
+            c = card_strings[i]
+            cards.append(Card(suit=c[0], rank="T" if "10" in c else c[1]))
+
+        return cards
+        
+    return __index_to_cards(
+        convert_one_hot_encoded_cards_to_int_encoded_list(valid_cards)
+    )
+
     move_nr = len(table_cards)
 
     # play anything on the first move

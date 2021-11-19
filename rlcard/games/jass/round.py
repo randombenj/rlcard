@@ -9,7 +9,7 @@ from rlcard.games.base import Card
 
 from rlcard.games.jass import Dealer, Player
 from rlcard.games.jass.player import JassPlayer
-from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, cards2str, get_higher_trump, get_legal_actions, get_lower_trump, get_jass_sort_card
+from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, TRUMP_VALUE, cards2str, get_higher_trump, get_legal_actions, get_lower_trump, get_jass_sort_card
 from rlcard.games.jass.utils import CARD_INDEX, CARD_RANK_STR_INDEX
 
 
@@ -75,6 +75,34 @@ class JassRound:
         """
         Count the current points of both teams and returns the winner id
         """
+         # cross check
+        from jass.game.rule_schieber import RuleSchieber
+        from jass.game.const import card_ids
+        rule = RuleSchieber()
+
+        trick = [card_ids[f"{c.suit}{c.rank if c.rank != 'T' else '10'}"] for (p, c) in self.table_cards]
+        trump = TRUMP_TYPE_INDEX[self.trump]
+        first_player_id = self.table_cards[0][0].player_id
+
+        points = rule.calc_points(
+            is_last=sum([len(c.split()) for c in self.played_cards]) == 36,
+            trump=trump,
+            trick=trick
+        )
+
+        winner_id = rule.calc_winner(
+            trump=trump,
+            trick=trick,
+            first_player=first_player_id
+        )
+
+        self.points.append({"winner": winner_id, "points": points})
+
+        return winner_id
+
+        """
+
+
         points = []
         winner = None
         for player, card in self.table_cards:
@@ -102,6 +130,15 @@ class JassRound:
             else:
                 winner, _ = sorted(suit_cards_in_round, key=lambda p_c: CARD_INDEX["O"][p_c[1].rank], reverse=True)[0]
 
+
+       
+
+        p1 = sum([p for (_, p) in points])
+        print(f"{p} == {p1}")
+        assert p == p1
+
         self.points.append({"winner": winner.player_id, "points": points})
+
+        """
 
         return winner.player_id

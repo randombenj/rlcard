@@ -32,8 +32,6 @@ class JassGame:
         self.history = []
 
         self.teams = [[1, 3], [2, 4]]
-        # two teams playing agains one another
-        self.points = [0 for _ in range(len(self.teams))]
 
         # initialize players
         self.players = [Player(num, self.np_random)
@@ -146,17 +144,12 @@ class JassGame:
         return self.finished
 
     def get_payoffs(self):
-        for points_in_one_round in self.round.points:
-            for player_id, points in points_in_one_round["points"]:
-                team_id = 0 if points_in_one_round["winner"] in self.teams[0] else 1
-                self.points[team_id] += points
+        team_points = [0, 0]
+        for p in self.round.points:
+            team_id = 0 if p["winner"] in self.teams[0] else 1
+            team_points[team_id] += p["points"]
 
-        # last win is +5 points
-        last_points_in_one_round = self.round.points[-1]
-        team_id = 0 if last_points_in_one_round["winner"] in self.teams[0] else 1
-        self.points[team_id] += 5
-        point_difference = self.points[0] - self.points[1]
-
+        point_difference = team_points[0] - team_points[1]
         payoff = point_difference / 157
 
         return [

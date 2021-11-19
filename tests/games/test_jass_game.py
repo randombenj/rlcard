@@ -10,7 +10,7 @@ def test_get_num_player():
 def test_get_num_actions():
     game = Game()
     num_actions = game.get_num_actions()
-    assert num_actions == 32
+    assert num_actions == 36
 
 def test_init_game():
     game = Game()
@@ -51,9 +51,6 @@ def test_get_payoffs():
         state, _ = game.step(action)
 
     payoffs = game.get_payoffs()
-    points = game.points
-
-    assert np.sum(points) == 157
 
     total = 0
     for payoff in payoffs:
