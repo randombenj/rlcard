@@ -380,7 +380,6 @@ def get_legal_actions(hand: List[Card], trump: str, table_cards: List[Card]) -> 
         move_nr=len(table_cards)
     )
 
-    print("valid", valid_cards)
     def __index_to_cards(index):
         """input_cards as a list of indexes"""
 
