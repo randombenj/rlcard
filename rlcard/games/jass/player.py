@@ -44,15 +44,18 @@ class JassPlayer:
     def set_current_hand(self, value):
         self._current_hand = value
 
-    def get_state(self, public, others_hands, num_cards_left, actions):
+    def get_state(self, public, others_hands, actions):
         state = {}
+
         state['trump'] = public['trump']
-        state['table_cards'] = public['table_cards'].copy()
-        state['played_cards'] = public['played_cards']
+        state['is_forehand'] = public['is_forehand']
+        state['trick_winner'] = public['trick_winner'].copy()
+        state['trick_first_player'] = public['trick_first_player'].copy()
+        state['current_trick'] = public['current_trick']
+        state['tricks'] = public['tricks'].copy()
         state['self'] = self.player_id
         state['current_hand'] = cards2str_with_suit(self._current_hand)
         state['others_hand'] = others_hands
-        state['num_cards_left'] = num_cards_left
         state['actions'] = actions
 
         return state
@@ -85,4 +88,4 @@ class JassPlayer:
         self._current_hand.remove(action)
 
     def __repr__(self):
-        return f"Player(id={self.player_id})"
+        return f"Player({self.player_id})"

@@ -37,19 +37,24 @@ def test_step():
     state, next_player_id = game.step(action)
     current = game.round.current_player
 
-    assert len(state['played_cards']) == 4
+    assert len(state['tricks']) == 9
     assert next_player_id == current
     assert current != previous_player_id
 
 def test_get_payoffs():
     game = Game()
     game.init_game()
+
+    step_counter = 0
     while not game.is_over():
+        step_counter += 1
         actions = game.get_legal_actions()
         #print(actions)
         action = np.random.choice(actions)
         state, _ = game.step(action)
 
+    # all cards have been played
+    assert step_counter == 36
     payoffs = game.get_payoffs()
 
     total = 0

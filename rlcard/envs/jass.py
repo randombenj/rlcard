@@ -29,7 +29,7 @@ class JassEnv(Env):
         self.state_shape = [[
             36 +     # players hand
             36 +     # remaining cards
-            4 * 36 + # tricks played by players 
+            4 * 36 + # tricks played by players
             6        # trump
         ] for _ in range(self.num_players)]
         self.action_shape = [[36] for _ in range(self.num_players)]
@@ -56,14 +56,28 @@ class JassEnv(Env):
         '''
         current_hand = one_hot_encode_cards(state['current_hand'])
         others_hand = one_hot_encode_cards(state['others_hand'])
-        played_cards = [one_hot_encode_cards(c) for c in state['played_cards']]
+
+        is_forehand = [1 if state['is_forehand'] else 0]
+        trick_first_player = [np.zeros(4) for _ in range(9)]
+        tricks = np.array([[np.zeros(36), np.zeros(36), np.zeros(36), np.zeros(36)] for _ in range(9)])
+        for i, trick in enumerate(state['tricks']):
+            for trick_index in range(4):
+                if len(trick) > trick_index + 1:
+                    trick_first_player[i][trick[trick_index][0].player_id] = 1
+                    tricks[i][trick_index][ACTION_LIST.index(trick[trick_index][1])]
+
         trump = one_hot_encode_trump(state['trump'])
 
         obs = np.concatenate((
             current_hand,
             others_hand,
-            np.concatenate(played_cards),
-            trump
+            np.concatenate(
+                [np.concatenate(t) for t in tricks]
+            ),
+            np.concatenate(state['trick_first_player']),
+            np.concatenate(state['trick_winner']),
+            trump,
+            is_forehand
         ))
 
         extracted_state = OrderedDict({'obs': obs, 'legal_actions': self._get_legal_actions()})

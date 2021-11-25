@@ -123,7 +123,7 @@ class DoudizhuGame:
             actions = []
         else:
             actions = list(player.available_actions(self.round.greater_player, self.judger))
-        state = player.get_state(self.round.public, others_hands, num_cards_left, actions)
+        state = player.get_state(self.round.public, others_hands, actions)
 
         return state
 

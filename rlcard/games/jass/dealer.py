@@ -21,6 +21,7 @@ class JassDealer:
         # should work also for jass
         #self.deck.sort(key=functools.cmp_to_key(jass_sort_card))
         self.trump = None
+        self.is_forehand = True
 
     def shuffle(self):
         ''' Randomly shuffle the deck
@@ -54,13 +55,14 @@ class JassDealer:
         # deal cards
         self.shuffle()
         self.deal_cards(players)
-        
+
         self.trump = players[trump_player].set_trump()
         if did_push(self.trump):
             # colleague chooses trump 'schiebe'
+            self.is_forehand = False
             self.trump = player[trump_player + 2 % 4].set_trump(is_forehand=False)
 
         for player in players:
             player.current_hand.sort(key=functools.cmp_to_key(get_jass_sort_card(self.trump)))
 
-        return self.trump
+        return self.trump, self.is_forehand

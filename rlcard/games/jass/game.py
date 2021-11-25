@@ -68,11 +68,10 @@ class JassGame:
         # perfrom action
         player = self.players[self.round.current_player]
         next_id = self.round.proceed_round(player, action)
-        #self.judger.calc_playable_cards(player, self.round.trump)
+
         if self.judger.judge_game(self.players, self.round.current_player):
             # ROUND OVER
             self.finished = True
-
 
         # get next state
         state = self.get_state(next_id)
@@ -104,9 +103,9 @@ class JassGame:
         if self.is_over():
             actions = []
         else:
-            actions = list(player.available_actions(self.judger, self.round.trump, self.round.table_cards))
+            actions = list(player.available_actions(self.judger, self.round.trump, self.round.tricks[self.round.current_trick]))
 
-        state = player.get_state(self.round.public, others_hands, num_cards_left, actions)
+        state = player.get_state(self.round.public, others_hands, actions)
 
         return state
 
