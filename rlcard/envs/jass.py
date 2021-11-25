@@ -26,12 +26,7 @@ class JassEnv(Env):
         super().__init__(config)
 
         # FIXME
-        self.state_shape = [[
-            36 +     # players hand
-            36 +     # remaining cards
-            4 * 36 + # tricks played by players
-            6        # trump
-        ] for _ in range(self.num_players)]
+        self.state_shape = [[2743] for _ in range(self.num_players)]
         self.action_shape = [[36] for _ in range(self.num_players)]
 
     def _get_legal_actions(self):
@@ -59,11 +54,15 @@ class JassEnv(Env):
 
         is_forehand = [1 if state['is_forehand'] else 0]
         trick_first_player = [np.zeros(4) for _ in range(9)]
+
         tricks = np.array([[np.zeros(36), np.zeros(36), np.zeros(36), np.zeros(36)] for _ in range(9)])
+        played_cards = np.array([[np.zeros(36), np.zeros(36), np.zeros(36), np.zeros(36)] for _ in range(9)])
+
         for i, trick in enumerate(state['tricks']):
             for trick_index in range(4):
                 if len(trick) > trick_index + 1:
                     trick_first_player[i][trick[trick_index][0].player_id] = 1
+                    played_cards[i][trick[trick_index][0].player_id][ACTION_LIST.index(trick[trick_index][1])] = 1
                     tricks[i][trick_index][ACTION_LIST.index(trick[trick_index][1])]
 
         trump = one_hot_encode_trump(state['trump'])
@@ -73,6 +72,9 @@ class JassEnv(Env):
             others_hand,
             np.concatenate(
                 [np.concatenate(t) for t in tricks]
+            ),
+            np.concatenate(
+                [np.concatenate(t) for t in played_cards]
             ),
             np.concatenate(state['trick_first_player']),
             np.concatenate(state['trick_winner']),

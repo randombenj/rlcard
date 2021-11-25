@@ -11,14 +11,14 @@ from jass.game.const import color_of_card, color_masks, J_offset, higher_trump, 
     OBE_ABE, next_player, partner_player
 from rlcard.games.jass import Dealer, Player
 from rlcard.games.jass.player import JassPlayer
-from rlcard.games.jass.utils import CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, TRUMP_VALUE, cards2str, get_higher_trump, get_legal_actions, get_lower_trump, get_jass_sort_card
+from rlcard.games.jass.utils import ACTION_LIST, CARD_VALUES, SUIT_OFFSET, TRUMP_INDEX, TRUMP_TYPE_INDEX, TRUMP_VALUE, cards2str, get_higher_trump, get_legal_actions, get_lower_trump, get_jass_sort_card
 from rlcard.games.jass.utils import CARD_INDEX, CARD_RANK_STR_INDEX
 
 
 class JassRound:
     ''' Round can call other Classes' functions to keep the game running
     '''
-    def __init__(self, np_random, played_cards):
+    def __init__(self, np_random, played_cards: List[str]):
         self.np_random = np_random
         self.played_cards = played_cards
         self.current_player = 0
@@ -101,10 +101,9 @@ class JassRound:
         """
         # cross check
         from jass.game.rule_schieber import RuleSchieber
-        from jass.game.const import card_ids
         rule = RuleSchieber()
 
-        trick = [card_ids[f"{c.suit}{c.rank if c.rank != 'T' else '10'}"] for (p, c) in self.tricks[self.current_trick]]
+        trick = [ACTION_LIST.index(c) for (p, c) in self.tricks[self.current_trick]]
         trump = TRUMP_TYPE_INDEX[self.trump]
 
         points = rule.calc_points(
@@ -112,8 +111,6 @@ class JassRound:
             trump=trump,
             trick=trick
         )
-
-        print(f"CALC WINNER FOR TRICK: {trick}  {self.tricks[self.current_trick]}, {trump}, {self.trick_first_player} {np.argmax(self.trick_first_player[self.current_trick])}")
 
         winner_index = self.calc_winner(
             trump=trump,

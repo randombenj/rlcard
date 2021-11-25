@@ -8,6 +8,7 @@ import threading
 import collections
 from typing import List
 
+from jass.game.const import card_ids
 import rlcard
 from rlcard.games.base import Card
 
@@ -15,7 +16,10 @@ from rlcard.games.base import Card
 VALID_SUIT = ['S', 'H', 'D', 'C']
 VALID_RANK = ['A', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
 
-ACTION_LIST = [Card(suit, rank) for rank in VALID_RANK for suit in VALID_SUIT]
+ACTION_LIST = [None] * 36
+
+for i, c in [(card_ids[f"{suit}{rank if rank != 'T' else '10'}"], Card(suit, rank)) for rank in VALID_RANK for suit in VALID_SUIT]:
+    ACTION_LIST[i] = c
 
 
 def did_push(trump):
@@ -100,8 +104,7 @@ def one_hot_encode_trump(trump: str):
 def one_hot_encode_cards(cards: str):
     one_hot = np.zeros(36)
     for card in cards.split():
-        suit, rank = card[0], card[1]
-        one_hot[SUIT_OFFSET[suit] + CARD_RANK_STR_INDEX[rank]] = 1
+        one_hot[ACTION_LIST.index(Card(suit=card[0], rank=card[1]))] = 1
     return one_hot
 
 #INDEX = OrderedDict(sorted(INDEX.items(), key=lambda t: t[1]))
@@ -389,7 +392,7 @@ def get_legal_actions(hand: List[Card], trump: str, table_cards: List[Card]) -> 
             cards.append(Card(suit=c[0], rank="T" if "10" in c else c[1]))
 
         return cards
-        
+
     return __index_to_cards(
         convert_one_hot_encoded_cards_to_int_encoded_list(valid_cards)
     )
@@ -563,7 +566,7 @@ def random_play_to_the_end(gameSim : GameSim):
 def get_game_state_with_random_hand_for_other_players(obs : GameObservation):
     # create random hand cards for the other players
     hands = get_random_hand_for_other_players(obs)
-    # create GameState based on given observation with random hand cards 
+    # create GameState based on given observation with random hand cards
     # for the other players
     gameState = state_from_observation(obs, hands)
     return gameState
@@ -579,7 +582,7 @@ def get_random_hand_for_other_players(obs : GameObservation):
 
     if obs.player_view != obs.player:
         Exception("Player view belongs not to player whos turn it is!")
-    
+
     available_cards_one_hot_encoded = get_available_cards_from_observation(obs)
     cards = np.flatnonzero(available_cards_one_hot_encoded).tolist()
     first_of_trick = obs.trick_first_player[obs.nr_tricks]
@@ -592,13 +595,13 @@ def get_random_hand_for_other_players(obs : GameObservation):
             last_of_trick = get_previous_player(last_of_trick)
         hands[last_of_trick].append(card)
         last_of_trick = get_previous_player(last_of_trick)
-    
+
     players = [0, 1, 2, 3]
     players.remove(obs.player)
     hands_one_hot_encoded[obs.player] = obs.hand
     for p in players:
         hands_one_hot_encoded[p] = get_cards_encoded(hands[p])
-    
+
     return hands_one_hot_encoded
 
 
