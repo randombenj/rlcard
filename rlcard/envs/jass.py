@@ -63,7 +63,7 @@ class JassEnv(Env):
                 if len(trick) > trick_index + 1:
                     trick_first_player[i][trick[trick_index][0].player_id] = 1
                     played_cards[i][trick[trick_index][0].player_id][ACTION_LIST.index(trick[trick_index][1])] = 1
-                    tricks[i][trick_index][ACTION_LIST.index(trick[trick_index][1])]
+                    tricks[i][trick_index][ACTION_LIST.index(trick[trick_index][1])] = 1
 
         trump = one_hot_encode_trump(state['trump'])
 
