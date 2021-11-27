@@ -58,15 +58,34 @@ class JassEnv(Env):
         tricks = np.array([[np.zeros(36), np.zeros(36), np.zeros(36), np.zeros(36)] for _ in range(9)])
         played_cards = np.array([[np.zeros(36), np.zeros(36), np.zeros(36), np.zeros(36)] for _ in range(9)])
 
-        for i, trick in enumerate(state['tricks']):
-            for trick_index in range(4):
-                if len(trick) > trick_index + 1:
-                    trick_first_player[i][trick[trick_index][0].player_id] = 1
-                    played_cards[i][trick[trick_index][0].player_id][ACTION_LIST.index(trick[trick_index][1])] = 1
-                    tricks[i][trick_index][ACTION_LIST.index(trick[trick_index][1])] = 1
+        for game_round, trick in enumerate(state['tricks']):
+            for trick_index, (player, card) in enumerate(trick):
+                    if trick_index == 0:
+                        trick_first_player[game_round][player.player_id] = 1
+                    played_cards[game_round][player.player_id][ACTION_LIST.index(card)] = 1
+                    tricks[game_round][trick_index][ACTION_LIST.index(card)] = 1
 
         trump = one_hot_encode_trump(state['trump'])
 
+        """
+        # sanity checks
+        number_of_cards_in_game = np.count_nonzero(current_hand == 1) + np.count_nonzero(others_hand == 1) + np.count_nonzero(
+            np.concatenate(
+                [np.concatenate(t) for t in tricks]
+            ) == 1)
+
+        number_of_unique_cards_in_game = np.unique(
+            np.concatenate((
+                np.where(current_hand == 1)[0], 
+                np.where(others_hand == 1)[0], 
+                np.where(np.concatenate([np.concatenate(t) for t in tricks]) == 1)[0]
+            ))
+        )
+
+        assert 36 == len(number_of_unique_cards_in_game), number_of_unique_cards_in_game
+        assert 36 == number_of_cards_in_game, f"Currently {number_of_cards_in_game} in game, hand: {np.count_nonzero(current_hand == 1)}, others: {np.count_nonzero(others_hand == 1)}, {np.count_nonzero(np.concatenate([np.concatenate(t) for t in tricks]) == 1)}"
+        """
+        
         obs = np.concatenate((
             current_hand,
             others_hand,
